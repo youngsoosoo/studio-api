@@ -1,43 +1,43 @@
 # studio-api
 
-Backend API for the studio portfolio. Built with **Spring Boot 3.5 + Java 17 + Gradle + JPA + PostgreSQL**.
+studio 포트폴리오 백엔드 API. **Spring Boot 3.5 + Java 17 + Gradle + JPA + PostgreSQL** 스택으로 구성되어 있다.
 
-## Requirements
+## 요구 사항
 
-- Java 17 (toolchain enforced by Gradle)
-- PostgreSQL 14+ reachable at the configured `DB_URL` (only required to `bootRun`; tests use H2)
+- Java 17 (Gradle 툴체인이 강제)
+- `DB_URL` 로 접근 가능한 PostgreSQL 14 이상 (`bootRun` 시에만 필요. 테스트는 H2 사용)
 
-## Configuration
+## 환경 설정
 
-Runtime config is driven by environment variables. Defaults are wired in
-`src/main/resources/application.yml`:
+런타임 설정은 환경 변수로 주입된다. 기본값은 `src/main/resources/application.yml`
+에 정의되어 있다.
 
-| Variable      | Default                                        | Notes                             |
-|---------------|------------------------------------------------|-----------------------------------|
-| `DB_URL`      | `jdbc:postgresql://localhost:5432/studio`      | JDBC URL                          |
-| `DB_USERNAME` | `studio`                                       |                                   |
-| `DB_PASSWORD` | _(empty)_                                      | Set via env, never commit secrets |
-| `SERVER_PORT` | `8080`                                         |                                   |
+| 변수            | 기본값                                         | 비고                                          |
+|-----------------|------------------------------------------------|-----------------------------------------------|
+| `DB_URL`        | `jdbc:postgresql://localhost:5432/studio`      | JDBC URL                                      |
+| `DB_USERNAME`   | `studio`                                       |                                               |
+| `DB_PASSWORD`   | _(빈 값)_                                      | 환경 변수로 주입. 시크릿은 절대 커밋 금지     |
+| `SERVER_PORT`   | `8080`                                         |                                               |
 
-For local overrides create an **uncommitted** `application-local.yml` next to
-`application.yml` and activate with `--spring.profiles.active=local`. The
-`.gitignore` blocks `.env*` and `application-local.*` from being checked in.
+로컬 오버라이드가 필요하면 `application.yml` 옆에 **커밋하지 않는**
+`application-local.yml` 을 만들고 `--spring.profiles.active=local` 로 활성화한다.
+`.gitignore` 가 `.env*` 와 `application-local.*` 의 커밋을 차단한다.
 
-## Run
+## 실행
 
 ```bash
-./gradlew bootRun                    # starts on :8080 against the configured DB
-./gradlew test                       # runs unit + slice tests against H2 (test profile)
-./gradlew build                      # full build incl. tests
+./gradlew bootRun                    # :8080 포트에서 설정된 DB 로 기동
+./gradlew test                       # 테스트 프로파일(H2) 로 유닛 + 슬라이스 테스트 실행
+./gradlew build                      # 테스트 포함 전체 빌드
 ```
 
-## Endpoints
+## 엔드포인트
 
-| Method | Path          | Description                  |
-|--------|---------------|------------------------------|
-| GET    | `/api/health` | Liveness payload, no auth    |
+| 메서드 | 경로          | 설명                       |
+|--------|---------------|----------------------------|
+| GET    | `/api/health` | 라이브니스 응답, 인증 불필요 |
 
-Sample response:
+응답 예시:
 
 ```json
 {
@@ -50,30 +50,30 @@ Sample response:
 }
 ```
 
-## Package layout
+## 패키지 구조
 
 ```
 com.studio.api
-├── StudioApiApplication.java   Spring Boot entry point
-├── common/                     Cross-cutting types
-│   ├── ApiResponse.java        Generic {status, data, error} envelope
+├── StudioApiApplication.java   Spring Boot 진입점
+├── common/                     크로스컷팅 타입
+│   ├── ApiResponse.java        제네릭 {status, data, error} 응답 봉투
 │   └── ErrorPayload.java
-├── config/                     Reserved for cross-cutting configuration
+├── config/                     크로스컷팅 설정을 둘 자리
 └── health/
     └── HealthController.java   GET /api/health
 ```
 
-## Testing strategy
+## 테스트 전략
 
-- `StudioApiApplicationTests` boots the full context against the `test` profile,
-  which swaps in H2 + `ddl-auto=create-drop` (no Postgres required).
-- `HealthControllerTest` is a `@WebMvcTest` slice that validates the envelope
-  shape of the `/api/health` response.
+- `StudioApiApplicationTests` 는 `test` 프로파일로 전체 컨텍스트를 부팅한다.
+  이 프로파일은 H2 + `ddl-auto=create-drop` 로 스왑되므로 PostgreSQL 없이도
+  실행된다.
+- `HealthControllerTest` 는 `@WebMvcTest` 슬라이스로 `/api/health` 응답 봉투의
+  형태를 검증한다.
 
-## Conventions
+## 컨벤션
 
-- Branches: `feature/{TICKET_ID}-{short-description}` cut from `dev`.
-- Commits: Conventional Commits (`chore:`, `feat:`, `fix:`, `docs:`, `test:`).
-- Workflow lives in
-  [studio-docs](https://github.com/youngsoosoo/studio-docs) — read the
-  collaboration doc before starting a new ticket.
+- 브랜치: `feature/{TICKET_ID}-{short-description}` 형식으로 `dev` 에서 분기
+- 커밋: Conventional Commits (`chore:`, `feat:`, `fix:`, `docs:`, `test:`)
+- 협업 워크플로는 [studio-docs](https://github.com/youngsoosoo/studio-docs)
+  의 문서를 새 티켓 시작 전에 먼저 확인할 것
