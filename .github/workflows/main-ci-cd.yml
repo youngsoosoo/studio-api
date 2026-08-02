@@ -138,8 +138,9 @@ jobs:
           IMAGE_VERSION: ${{ steps.version.outputs.version }}
         run: |
           deploy_dir="${RUNNER_TEMP}/studio-api-deploy"
-          install -m 700 -d "$deploy_dir"
+          install -m 700 -d "$deploy_dir" "$deploy_dir/nginx"
           cp docker-compose.yml "$deploy_dir/docker-compose.yml"
+          cp nginx/default.conf "$deploy_dir/nginx/default.conf"
           printf '%s\n' "$EC2_APP_ENV" > "$deploy_dir/.env"
           printf 'DOCKERHUB_IMAGE=%s\nIMAGE_VERSION=%s\n' \
             "$IMAGE_NAME" "$IMAGE_VERSION" > "$deploy_dir/image.env.next"
@@ -168,12 +169,15 @@ jobs:
             -o ConnectTimeout=15
           )
           target="${EC2_USER}@${EC2_HOST}"
-          ssh "${ssh_options[@]}" "$target" 'mkdir -p ~/studio-api'
+          ssh "${ssh_options[@]}" "$target" 'mkdir -p ~/studio-api/nginx'
           scp "${ssh_options[@]}" \
             "${RUNNER_TEMP}/studio-api-deploy/docker-compose.yml" \
             "${RUNNER_TEMP}/studio-api-deploy/.env" \
             "${RUNNER_TEMP}/studio-api-deploy/image.env.next" \
             "${target}:~/studio-api/"
+          scp "${ssh_options[@]}" \
+            "${RUNNER_TEMP}/studio-api-deploy/nginx/default.conf" \
+            "${target}:~/studio-api/nginx/default.conf"
 
       - name: EC2에 버전 이미지 배포
         env:
@@ -201,8 +205,8 @@ jobs:
             trap "docker logout >/dev/null 2>&1 || true" EXIT
             chmod 600 .env image.env.next
             docker compose --env-file image.env.next config --quiet
-            docker compose --env-file image.env.next pull api
+            docker compose --env-file image.env.next pull api proxy
             mv image.env.next image.env
-            docker compose --env-file image.env up -d --no-build api
-            docker compose --env-file image.env ps api
+            docker compose --env-file image.env up -d --no-build api proxy
+            docker compose --env-file image.env ps api proxy
           '
