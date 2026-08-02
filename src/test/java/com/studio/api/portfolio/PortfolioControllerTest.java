@@ -111,11 +111,11 @@ class PortfolioControllerTest {
     @Test
     void returnsAggregatedPortfolio() throws Exception {
         mockMvc.perform(get("/api/portfolio")
-                .header("Origin", "https://studio-web-olive.vercel.app"))
+                .header("Origin", "https://studio-bu0uukfi6-studio-198a.vercel.app"))
             .andExpect(status().isOk())
             .andExpect(header().string(
                     "Access-Control-Allow-Origin",
-                    "https://studio-web-olive.vercel.app"))
+                    "https://studio-bu0uukfi6-studio-198a.vercel.app"))
             .andExpect(jsonPath("$.status").value("success"))
             .andExpect(jsonPath("$.error").doesNotExist())
             .andExpect(jsonPath("$.data.profile.name").value("Test User"))

@@ -109,6 +109,13 @@ class AdminImageControllerTest {
             .andExpect(header().string(
                     "Access-Control-Allow-Origin",
                     "https://studio-web-olive.vercel.app"));
+
+        mockMvc.perform(get(filePath).header(
+                        "Origin", "https://studio-bu0uukfi6-studio-198a.vercel.app"))
+            .andExpect(status().isOk())
+            .andExpect(header().string(
+                    "Access-Control-Allow-Origin",
+                    "https://studio-bu0uukfi6-studio-198a.vercel.app"));
     }
 
     @Test
