@@ -1,41 +1,23 @@
-# studio-api 의 PostgreSQL.
-# 로컬 개발과 AWS EC2 배포에 같은 파일을 쓴다. 접속 정보는 .env 로 주입한다.
-#
-#   프로젝트 루트에 .env 파일을 만들고 값을 채운다(특히 DB_PASSWORD).
-#   docker compose up -d       # 신규 구축 또는 계획된 재기동에만 사용
-#   docker compose ps         # healthy 확인
-#
-# 애플리케이션 시작 시 DB 스키마와 데이터를 자동 생성하거나 수정하지 않는다.
-# DB 변경은 애플리케이션 실행과 분리된 별도 승인 절차에서만 수행한다.
-# 기존 named volume이 있다면 DB_NAME/DB_USER/DB_PASSWORD 변경은 기존 DB에 적용되지 않는다.
-# 운영 데이터 보호를 위해 down -v, volume rm, system prune --volumes 는 실행하지 말 것.
-#
-# EC2에서는 포트를 루프백에만 바인딩하고 SSH 터널로 접근한다(아래 ports 참고).
-# 보안 그룹에서 5432 를 열지 말 것.
+# EC2 Linux에서 studio-api만 빌드하고 실행한다.
+# PostgreSQL 서비스나 볼륨은 선언하지 않으므로 기존 DB 컨테이너를 건드리지 않는다.
+# network_mode: host 덕분에 컨테이너의 localhost가 EC2 호스트와 동일하며,
+# 호스트의 127.0.0.1에 게시된 기존 PostgreSQL 포트로 연결할 수 있다.
 services:
-  postgres:
-    image: postgres:17-alpine
-    container_name: studio-postgres
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: studio-api:latest
+    container_name: studio-api
     restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: ${DB_NAME:-portfolio}
-      POSTGRES_USER: ${DB_USER:-portfolio_user}
-      # 미설정이면 즉시 실패시켜 원인을 명확히 한다.
-      # (메시지는 콘솔 인코딩 문제를 피해 영문으로 둔다)
-      POSTGRES_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD is required - set it in .env}"
-    ports:
-      # 루프백에만 바인딩 → 인터넷에 노출되지 않는다. 원격에서는 SSH 터널로 접근:
-      #   ssh -i key.pem -N -L 5432:localhost:5432 ec2-user@<EIP>
-      # (2단계에서 API 컨테이너가 같은 compose 네트워크에 들어오면 이 줄은 삭제 가능)
-      - "127.0.0.1:${DB_PORT:-5432}:5432"
+      UPLOAD_DIR: /app/uploads
     volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      # $$ 는 compose 보간을 피해 컨테이너 안에서 평가되게 한다.
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - studio-api-uploads:/app/uploads
+    stop_grace_period: 30s
 
 volumes:
-  postgres-data:
+  studio-api-uploads:

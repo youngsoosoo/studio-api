@@ -8,156 +8,100 @@ studio 포트폴리오 백엔드 API. **Spring Boot 3.5 + Java 17 + Gradle + JPA
 ## 요구 사항
 
 - Java 17 (Gradle 툴체인이 강제)
-- PostgreSQL 14 이상 (`bootRun` 시에만 필요. 테스트는 H2 사용)
-  - 로컬은 Docker로 띄우는 것을 권장한다 (아래 참고)
+- 접근 가능한 기존 PostgreSQL 14 이상 (`bootRun`과 API 컨테이너 실행 시 필요. 테스트는 H2 사용)
+- EC2 API 배포 시 Docker Engine과 Docker Compose 플러그인
 
-## 데이터베이스 (Docker Compose)
+## 기존 PostgreSQL 연결
 
-`docker-compose.yml` 이 앱이 기대하는 Postgres를 정의한다. 접속 정보는 `.env` 로 주입한다
-(로컬·EC2 동일 파일 사용).
+이 저장소는 PostgreSQL을 생성하거나 관리하지 않는다. `docker-compose.yml`도 API 서비스만 정의하며
+이미 EC2에서 실행 중인 PostgreSQL 컨테이너와 그 볼륨을 선언하거나 변경하지 않는다.
 
-```bash
-# 프로젝트 루트에 .env 파일을 만들고 아래 표의 값을 입력한다.
-docker compose up -d       # 신규 DB를 만들거나 계획된 재기동 때만 실행
-docker compose ps         # healthy 확인
-```
+애플리케이션 시작 시 Hibernate는 `ddl-auto: validate`로 스키마를 검증할 뿐 생성하거나 수정하지 않는다.
+포트폴리오 조회 API는 읽기 전용이며, 관리자 이미지 업로드 API를 실제 호출할 때만 이미지 메타데이터와
+대상 연결 정보가 DB에 저장된다.
 
-`.env` 변수:
-
-| 변수          | 예제값                                           | 비고                                             |
-|---------------|--------------------------------------------------|--------------------------------------------------|
-| `DB_NAME`     | `portfolio`                                      | PostgreSQL 데이터베이스명                        |
-| `DB_USER`     | `portfolio_user`                                 | PostgreSQL 사용자명                              |
-| `DB_PASSWORD` | _(빈 값)_                                        | 필수. 강한 랜덤 값을 입력해야 Compose/앱 기동 가능 |
-| `DB_PORT`     | `5432`                                           | 호스트 바인딩 포트. 충돌 시 `5433` 등으로 변경   |
-| `DB_URL`      | `jdbc:postgresql://localhost:5432/portfolio`     | 애플리케이션 JDBC URL                            |
-
-> 🔒 포트는 **`127.0.0.1` 에만 바인딩**된다. 외부에서 직접 붙지 못하며, 원격에서는 SSH 터널로
-> 접근한다(아래 "EC2 배포" 참고). 보안 그룹/방화벽에서 5432 를 열지 말 것.
-
-> ⚠️ 애플리케이션 시작 시 Hibernate는 `ddl-auto: validate`로 기존 스키마를 검증할 뿐 생성하거나 수정하지 않는다.
-> DB 스키마나 데이터 변경은 애플리케이션 실행과 분리된 승인 절차에서만 수행한다.
-> 이 저장소에는 운영 초기 데이터, 실행용 SQL, DB dump를 보관하지 않는다.
-
-### 이미 운영 중인 EC2 PostgreSQL 보호
-
-EC2에서 PostgreSQL 컨테이너가 이미 `healthy`라면 신규 구축 단계와 `docker compose up -d`를
-반복할 필요가 없다. 먼저 `docker compose ps`로 현재 상태만 확인한다.
-
-- `docker compose down -v`, `docker volume rm`, `docker system prune --volumes`를 실행하지 않는다.
-- `docker compose down`은 볼륨을 유지하지만 컨테이너를 중단하므로 계획된 점검 외에는 실행하지 않는다.
-- `DB_NAME`, `DB_USER`, `DB_PASSWORD`는 빈 볼륨 최초 초기화에 사용된다. 기존 볼륨에서 값을 바꿔도
-  기존 데이터베이스 사용자나 비밀번호가 자동으로 변경되지 않는다.
-- `docker-compose.yml`이나 `.env`를 변경한 뒤 `docker compose up -d`를 실행하면 컨테이너가
-  재생성될 수 있으므로, 변경 내용과 named volume 연결을 먼저 검토한다.
 - `./gradlew test`와 `./gradlew build`의 테스트는 H2를 사용하므로 EC2 PostgreSQL에 연결하지 않는다.
-- `bootRun`은 설정된 `DB_URL`의 DB에 연결해 스키마를 검증하고 데이터를 조회한다. 관리자 이미지
-  업로드 API를 실제 호출할 때만 해당 DB에 쓰기가 발생한다.
+- EC2 보안 그룹에서 PostgreSQL 포트 `5432`를 외부에 공개하지 않는다.
+- 운영 DB 스키마와 데이터 변경은 애플리케이션 배포와 분리된 승인 절차에서만 수행한다.
+- 이 저장소에는 운영 데이터, 실행용 SQL, DB dump와 비밀번호를 보관하지 않는다.
 
-### Public GitHub 저장소의 시크릿 관리
+### 시크릿 관리
 
 - `.env`와 `.env.production` 등 모든 환경 파일은 저장소에 커밋하지 않는다.
-- 실제 비밀번호가 들어 있는 환경 파일은 `.gitignore`로 커밋을 차단한다.
-- 로컬에서는 `.env`를 프로젝트 루트에 두면 Docker Compose와 Spring Boot가 같은 파일을 읽는다.
-- GitHub Actions에서는 저장소 또는 배포 Environment의 `Secrets and variables > Actions`에
-  `DB_PASSWORD`, `ADMIN_KEY` 등을 등록하고 `${{ secrets.DB_PASSWORD }}` 형태로 주입한다.
-- EC2에는 `.env`를 서버에서 직접 만들고 `chmod 600 .env`로 권한을 제한한다. 자동 배포 단계에서는
-  장기적으로 AWS Secrets Manager 또는 SSM Parameter Store에서 런타임에 주입하는 방식을 권장한다.
-- 시크릿이 한 번이라도 Git 이력이나 공개 화면에 노출됐다면 파일 삭제만으로 끝내지 말고 해당 값을
-  즉시 폐기·재발급한다.
+- EC2의 프로젝트 디렉터리에 `.env`를 직접 만들고 `chmod 600 .env`로 권한을 제한한다.
+- GitHub Actions에서는 저장소 또는 배포 Environment의 Secrets에 값을 등록한다.
+- 시크릿이 Git 이력이나 공개 화면에 노출됐다면 파일 삭제로 끝내지 말고 즉시 폐기·재발급한다.
 
-GitHub public 저장소는 secret scanning이 자동 적용되며, 사용자 push protection도 공개 저장소로
-시크릿을 푸시하는 실수를 막아준다. 차단이 발생하면 우회하지 말고 값을 제거한 뒤 다시 커밋한다.
+## EC2 API 서버 배포
 
-## EC2 신규 구축 (DB만, 필요한 경우)
+`Dockerfile`은 Spring Boot 실행 이미지를 만들고, `docker-compose.yml`은 `api` 컨테이너와 업로드 전용
+볼륨만 관리한다. Compose 파일에는 PostgreSQL 서비스나 PostgreSQL 볼륨이 없다.
 
-API는 아직 로컬에서 실행하고, **DB만 EC2로 옮기는** 단계다. EC2에는 소스코드가 필요 없고
-`docker-compose.yml` 과 `.env` 두 파일만 있으면 된다.
+### 연결 전제
 
-> 이미 EC2에서 PostgreSQL이 정상 구동 중이면 아래 1~3단계를 다시 수행하지 말고
-> "로컬 앱 → EC2 DB 연결" 단계부터 확인한다.
+Compose는 EC2 Linux의 `network_mode: host`를 사용한다. 따라서 API 컨테이너의 `localhost`는
+EC2 호스트와 동일하다. 기존 PostgreSQL 컨테이너가 `127.0.0.1:5432`처럼 호스트 포트를 게시하고 있다면
+다음 JDBC URL로 연결할 수 있다.
 
-### 1. 인스턴스 / 보안 그룹
-
-| 항목      | 권장                                                          |
-|-----------|---------------------------------------------------------------|
-| 타입      | t3.small(2GB) 이상 — 2단계에서 JVM이 올라가므로               |
-| OS        | Amazon Linux 2023 또는 Ubuntu 22.04/24.04                     |
-| 스토리지  | 20GB                                                          |
-| 네트워크  | 퍼블릭 서브넷 + Elastic IP(재시작해도 IP 유지)                |
-
-보안 그룹 인바운드: **22(SSH)는 내 IP만**, **5432는 열지 않는다**(SSH 터널로 접근).
-
-### 2. Docker 설치 (최초 1회)
-
-**Amazon Linux 2023**
-```bash
-sudo dnf update -y
-sudo dnf install -y docker
-sudo systemctl enable --now docker
-sudo usermod -aG docker ec2-user
-sudo mkdir -p /usr/local/lib/docker/cli-plugins
-sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
-  -o /usr/local/lib/docker/cli-plugins/docker-compose
-sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
-exit   # 재접속해야 docker 그룹 권한 적용
+```text
+jdbc:postgresql://localhost:5432/<database>
 ```
 
-**Ubuntu** (compose plugin 포함)
-```bash
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker ubuntu
-exit   # 재접속
+PostgreSQL이 다른 호스트 포트를 사용한다면 `DB_URL`의 포트만 맞춘다. 기존 PostgreSQL 컨테이너의
+네트워크, 환경 변수 또는 볼륨은 변경하지 않는다.
+
+### 1. EC2 환경 변수 준비
+
+저장소 루트에 `.env`를 직접 만든다. 실제 값은 저장소에 커밋하지 않는다.
+
+```dotenv
+DB_URL=jdbc:postgresql://localhost:5432/<database>
+DB_USER=<existing-user>
+DB_PASSWORD=<existing-password>
+SERVER_PORT=8080
+APP_PUBLIC_BASE_URL=https://<api-domain>
+ADMIN_KEY=<strong-random-key>
 ```
 
-확인: `docker version && docker compose version`
+`UPLOAD_DIR`은 Compose가 `/app/uploads`로 고정하며 `studio-api-uploads` named volume에 보존한다.
 
-### 3. 파일 전송 후 기동
+### 2. 빌드 및 실행
 
 ```bash
-# 로컬에서
-ssh -i key.pem ec2-user@<EIP> "mkdir -p ~/studio"
-scp -i key.pem docker-compose.yml ec2-user@<EIP>:~/studio/
-scp -i key.pem .env               ec2-user@<EIP>:~/studio/   # 비밀번호 포함 — git에 올리지 않음
-
-# EC2에서
-ssh -i key.pem ec2-user@<EIP>
-cd ~/studio
 chmod 600 .env
-docker compose up -d && docker compose ps   # 신규 구축 또는 계획된 재기동에만 사용
+docker compose build api
+docker compose up -d api
+docker compose ps
+docker compose logs --tail=100 api
 ```
 
-### 4. 로컬 앱 → EC2 DB 연결 (SSH 터널)
+위 명령은 `api` 서비스만 대상으로 한다. 기존 PostgreSQL 컨테이너에는 Compose 명령을 실행하지 않는다.
 
-터널을 열어둔다(이 창은 유지):
-```bash
-ssh -i key.pem -N -L 5432:localhost:5432 ec2-user@<EIP>
-```
-
-DB 스키마가 승인된 절차로 준비된 뒤 다른 창에서 앱을 실행한다:
-```powershell
-$env:DB_URL      = "jdbc:postgresql://localhost:5432/portfolio"   # 터널 경유
-$env:DB_USER     = "portfolio_user"
-$env:DB_PASSWORD = "<.env 에 넣은 값>"
-.\gradlew.bat bootRun
-```
-
-### 5. 확인
+### 3. 새 버전 배포
 
 ```bash
-# 로컬: API 응답 확인
+git pull
+docker compose build --pull api
+docker compose up -d api
+docker compose logs --tail=100 api
+```
+
+### 4. 확인 및 운영 주의
+
+```bash
 curl http://localhost:8080/api/portfolio
 ```
 
-외부 노출 점검(**실패해야 정상**): 로컬에서 `Test-NetConnection <EIP> -Port 5432`
-
-> 인스턴스를 **terminate** 하면 named volume(EBS)도 삭제된다. stop/start 는 안전하다.
-> 운영 백업과 복구는 저장소의 애플리케이션 코드와 분리된 승인 절차로 관리한다.
+- `docker compose stop api`는 API 컨테이너만 중단한다.
+- `docker compose down`도 이 파일에 정의된 API 리소스만 대상으로 하지만, 업로드 볼륨 보호를 위해
+  `docker compose down -v`는 실행하지 않는다.
+- host network에서는 API 포트가 EC2 호스트에 직접 열린다. 운영 환경에서는 Nginx 등으로 80/443만
+  공개하고 `SERVER_PORT`는 보안 그룹에서 외부 접근을 제한하는 구성을 권장한다.
 
 ## 환경 설정
 
-런타임 설정은 환경 변수로 주입한다. 기본값은 `src/main/resources/application.yml` 에
-정의되어 있고, 위 Docker 접속 정보와 일치한다.
+런타임 설정은 환경 변수로 주입한다. 로컬 기본값은 `src/main/resources/application.yml`에 정의되어
+있으며, EC2에서는 기존 PostgreSQL 접속 정보로 반드시 오버라이드한다.
 
 | 변수                  | 기본값                                            | 비고                                          |
 |-----------------------|---------------------------------------------------|-----------------------------------------------|
@@ -167,7 +111,7 @@ curl http://localhost:8080/api/portfolio
 | `SERVER_PORT`         | `8080`                                            |                                               |
 | `APP_PUBLIC_BASE_URL` | `http://localhost:8080`                           | 업로드 이미지 URL 프리픽스                    |
 | `ADMIN_KEY`           | _(빈 값)_                                         | 비어 있으면 이미지 업로드 API 비활성(fail closed) |
-| `UPLOAD_DIR`          | `./uploads`                                       | 업로드 파일 저장 경로. OneDrive 밖 권장       |
+| `UPLOAD_DIR`          | `./uploads`                                       | 업로드 파일 저장 경로. Compose에서는 `/app/uploads`로 고정 |
 
 > 🔐 `DB_PASSWORD` 는 **의도적으로 기본값이 없다.** 비어 있으면
 > `DataSourceSecretCheck`가 명확한 오류와 함께 기동을 중단한다.
@@ -179,13 +123,19 @@ curl http://localhost:8080/api/portfolio
 
 ## 실행
 
-```bash
-docker compose up -d                 # 신규 로컬 Postgres 기동 또는 계획된 재기동
-./gradlew test                       # 테스트 프로파일(H2). DB_PASSWORD 불필요
-./gradlew build                      # 테스트 포함 전체 빌드
+```powershell
+.\gradlew.bat test                   # 테스트 프로파일(H2). 외부 DB에 연결하지 않음
+.\gradlew.bat build                  # 테스트 포함 전체 빌드
 ```
 
-프로젝트 루트의 `.env`에 실제 값을 채웠다면 별도의 PowerShell 환경 변수 설정 없이 기동할 수 있다:
+로컬에서 기존 PostgreSQL로 연결할 때는 프로젝트 루트의 `.env`에 실제 접속 정보를 넣는다.
+EC2 DB가 `127.0.0.1`에만 열려 있다면 먼저 SSH 터널을 사용한다.
+
+```bash
+ssh -i key.pem -N -L 5432:localhost:5432 ec2-user@<EIP>
+```
+
+`.env`가 준비되어 있다면 별도의 PowerShell 환경 변수 설정 없이 기동할 수 있다:
 
 ```powershell
 .\gradlew.bat bootRun                # 준비된 DB 스키마를 검증한 뒤 :8080 기동
