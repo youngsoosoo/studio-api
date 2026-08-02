@@ -1,7 +1,8 @@
-package com.studio.api.image;
+package com.studio.api.image.controller;
 
 import com.studio.api.common.ApiResponse;
 import com.studio.api.image.dto.ImageResponse;
+import com.studio.api.image.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

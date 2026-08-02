@@ -1,4 +1,4 @@
-package com.studio.api.portfolio.entity;
+package com.studio.api.image.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

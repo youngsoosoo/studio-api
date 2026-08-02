@@ -1,6 +1,6 @@
 package com.studio.api.portfolio.service;
 
-import com.studio.api.common.ImageUrlResolver;
+import com.studio.api.image.service.ImageUrlResolver;
 import com.studio.api.portfolio.dto.About;
 import com.studio.api.portfolio.dto.Achievement;
 import com.studio.api.portfolio.dto.Award;

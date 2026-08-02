@@ -1,5 +1,6 @@
 package com.studio.api.portfolio.entity;
 
+import com.studio.api.image.entity.ImageEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

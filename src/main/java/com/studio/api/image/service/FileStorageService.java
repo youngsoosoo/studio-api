@@ -1,4 +1,4 @@
-package com.studio.api.image;
+package com.studio.api.image.service;
 
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;

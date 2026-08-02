@@ -1,14 +1,13 @@
-package com.studio.api.image;
+package com.studio.api.image.service;
 
-import com.studio.api.common.ImageUrlResolver;
 import com.studio.api.common.NotFoundException;
 import com.studio.api.config.CacheConfig;
 import com.studio.api.image.dto.ImageResponse;
-import com.studio.api.portfolio.entity.ImageEntity;
+import com.studio.api.image.entity.ImageEntity;
+import com.studio.api.image.repository.ImageRepository;
 import com.studio.api.portfolio.entity.ProjectDetailEntity;
 import com.studio.api.portfolio.entity.ProjectEntity;
 import com.studio.api.portfolio.entity.ProjectImageEntity;
-import com.studio.api.portfolio.repository.ImageRepository;
 import com.studio.api.portfolio.repository.ProfileRepository;
 import com.studio.api.portfolio.repository.ProjectDetailRepository;
 import com.studio.api.portfolio.repository.ProjectImageRepository;

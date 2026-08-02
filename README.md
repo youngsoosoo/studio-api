@@ -189,7 +189,6 @@ $env:DB_PASSWORD = "<비밀번호>"
 
 | 메서드 | 경로                                | 설명                                        |
 |--------|-------------------------------------|---------------------------------------------|
-| GET    | `/api/health`                       | 라이브니스 응답, 인증 불필요                |
 | GET    | `/api/portfolio`                    | 전체 포트폴리오 집계 (프론트가 사용)        |
 | GET    | `/api/portfolio/{section}`          | 섹션별 조회 (profile, about, projects 등)   |
 | GET    | `/api/portfolio/projects/{slug}`    | 프로젝트 상세(케이스 스터디). 없으면 404    |
@@ -228,18 +227,17 @@ com.studio.api
 │   ├── ApiResponse.java        제네릭 {status, data, error} 응답 봉투
 │   ├── ErrorPayload.java
 │   ├── GlobalExceptionHandler.java  예외 → 에러 봉투 (404/401/400/413/500)
-│   ├── ImageUrlResolver.java   ImageEntity → 절대 /files/ URL
 │   ├── NotFoundException.java  UnauthorizedException.java
 ├── config/
 │   ├── WebCorsConfig.java      localhost:5173 CORS
 │   ├── WebConfig.java          /files/** 정적 서빙 + admin 인터셉터 등록
 │   └── AdminKeyInterceptor.java  /api/admin/** X-Admin-Key 검사
-├── health/
-│   └── HealthController.java   GET /api/health
 ├── image/                      이미지 업로드 모듈
-│   ├── AdminImageController.java  POST /api/admin/images
-│   ├── ImageService.java       저장 + target 연결 (트랜잭션)
-│   └── FileStorageService.java 디스크 저장, UUID 파일명, allowlist
+│   ├── controller/             관리자 이미지 업로드 API
+│   ├── dto/                    업로드 응답 모델
+│   ├── entity/                 이미지 메타데이터 JPA 엔티티
+│   ├── repository/             이미지 메타데이터 리포지토리
+│   └── service/                파일 저장·연결·URL 변환
 └── portfolio/
     ├── controller/PortfolioController.java
     ├── dto/                    응답 record (Profile, ProjectDetailResponse 등)

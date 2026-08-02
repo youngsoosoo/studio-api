@@ -1,6 +1,6 @@
-package com.studio.api.common;
+package com.studio.api.image.service;
 
-import com.studio.api.portfolio.entity.ImageEntity;
+import com.studio.api.image.entity.ImageEntity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
