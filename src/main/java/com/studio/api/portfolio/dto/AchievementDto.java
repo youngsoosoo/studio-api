@@ -5,7 +5,7 @@ package com.studio.api.portfolio.dto;
  *
  * @param metric short, quantified impact, e.g. "p95 응답 40%↓" (nullable)
  */
-public record Achievement(
+public record AchievementDto(
         String id,
         String title,
         String description,

@@ -7,5 +7,5 @@ package com.studio.api.portfolio.dto;
  * @param url   absolute URL
  * @param icon  short icon key the frontend maps to an SVG (e.g. "github")
  */
-public record SocialLink(String label, String url, String icon) {
+public record SocialLinkDto(String label, String url, String icon) {
 }

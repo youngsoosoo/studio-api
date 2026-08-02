@@ -224,8 +224,8 @@ curl -X POST -H "X-Admin-Key: $ADMIN_KEY" \
 com.studio.api
 ├── StudioApiApplication.java   Spring Boot 진입점
 ├── common/                     크로스컷팅 타입
-│   ├── ApiResponse.java        제네릭 {status, data, error} 응답 봉투
-│   ├── ErrorPayload.java
+│   ├── ApiResponseDto.java        제네릭 {status, data, error} 응답 봉투
+│   ├── ErrorResponseDto.java
 │   ├── GlobalExceptionHandler.java  예외 → 에러 봉투 (404/401/400/413/500)
 │   ├── NotFoundException.java  UnauthorizedException.java
 ├── config/
@@ -240,7 +240,7 @@ com.studio.api
 │   └── service/                파일 저장·연결·URL 변환
 └── portfolio/
     ├── controller/PortfolioController.java
-    ├── dto/                    응답 record (Profile, ProjectDetailResponse 등)
+    ├── dto/                    응답 record (ProfileDto, ProjectDetailResponseDto 등)
     ├── entity/                 JPA 엔티티 (*Entity)
     ├── repository/             Spring Data 리포지토리
     └── service/

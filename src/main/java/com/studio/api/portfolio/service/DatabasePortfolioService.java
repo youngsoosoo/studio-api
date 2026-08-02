@@ -2,19 +2,19 @@ package com.studio.api.portfolio.service;
 
 import com.studio.api.config.AsyncConfig;
 import com.studio.api.config.CacheConfig;
-import com.studio.api.portfolio.dto.About;
-import com.studio.api.portfolio.dto.Achievement;
-import com.studio.api.portfolio.dto.Award;
-import com.studio.api.portfolio.dto.Certification;
-import com.studio.api.portfolio.dto.Education;
-import com.studio.api.portfolio.dto.Experience;
-import com.studio.api.portfolio.dto.PortfolioResponse;
-import com.studio.api.portfolio.dto.Profile;
-import com.studio.api.portfolio.dto.ProjectDetailResponse;
-import com.studio.api.portfolio.dto.ProjectSummary;
-import com.studio.api.portfolio.dto.Strength;
-import com.studio.api.portfolio.dto.TechStackGroup;
-import com.studio.api.portfolio.dto.TimelineEntry;
+import com.studio.api.portfolio.dto.AboutDto;
+import com.studio.api.portfolio.dto.AchievementDto;
+import com.studio.api.portfolio.dto.AwardDto;
+import com.studio.api.portfolio.dto.CertificationDto;
+import com.studio.api.portfolio.dto.EducationDto;
+import com.studio.api.portfolio.dto.ExperienceDto;
+import com.studio.api.portfolio.dto.PortfolioResponseDto;
+import com.studio.api.portfolio.dto.ProfileDto;
+import com.studio.api.portfolio.dto.ProjectDetailResponseDto;
+import com.studio.api.portfolio.dto.ProjectSummaryDto;
+import com.studio.api.portfolio.dto.StrengthDto;
+import com.studio.api.portfolio.dto.TechStackGroupDto;
+import com.studio.api.portfolio.dto.TimelineEntryDto;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -42,20 +42,20 @@ public class DatabasePortfolioService implements PortfolioReader {
 
     @Override
     @Cacheable(CacheConfig.PORTFOLIO_CACHE)
-    public PortfolioResponse getPortfolio() {
+    public PortfolioResponseDto getPortfolio() {
         // Each section loads in its own thread + transaction, so the ~11 DB
         // round trips overlap instead of summing on a cold (uncached) request.
-        CompletableFuture<Profile> profile = async(loader::loadProfile);
-        CompletableFuture<About> about = async(loader::loadAbout);
-        CompletableFuture<List<Strength>> strengths = async(loader::loadStrengths);
-        CompletableFuture<List<Achievement>> achievements = async(loader::loadAchievements);
-        CompletableFuture<List<Experience>> experiences = async(loader::loadExperiences);
-        CompletableFuture<List<ProjectSummary>> projects = async(loader::loadProjects);
-        CompletableFuture<List<TechStackGroup>> techStack = async(loader::loadTechStack);
-        CompletableFuture<List<Education>> education = async(loader::loadEducation);
-        CompletableFuture<List<Award>> awards = async(loader::loadAwards);
-        CompletableFuture<List<Certification>> certifications = async(loader::loadCertifications);
-        CompletableFuture<List<TimelineEntry>> timeline = async(loader::loadTimeline);
+        CompletableFuture<ProfileDto> profile = async(loader::loadProfile);
+        CompletableFuture<AboutDto> about = async(loader::loadAbout);
+        CompletableFuture<List<StrengthDto>> strengths = async(loader::loadStrengths);
+        CompletableFuture<List<AchievementDto>> achievements = async(loader::loadAchievements);
+        CompletableFuture<List<ExperienceDto>> experiences = async(loader::loadExperiences);
+        CompletableFuture<List<ProjectSummaryDto>> projects = async(loader::loadProjects);
+        CompletableFuture<List<TechStackGroupDto>> techStack = async(loader::loadTechStack);
+        CompletableFuture<List<EducationDto>> education = async(loader::loadEducation);
+        CompletableFuture<List<AwardDto>> awards = async(loader::loadAwards);
+        CompletableFuture<List<CertificationDto>> certifications = async(loader::loadCertifications);
+        CompletableFuture<List<TimelineEntryDto>> timeline = async(loader::loadTimeline);
 
         try {
             CompletableFuture.allOf(profile, about, strengths, achievements, experiences,
@@ -65,7 +65,7 @@ public class DatabasePortfolioService implements PortfolioReader {
             throw e.getCause() instanceof RuntimeException re ? re : e;
         }
 
-        return new PortfolioResponse(
+        return new PortfolioResponseDto(
                 profile.join(), about.join(), strengths.join(), achievements.join(),
                 experiences.join(), projects.join(), techStack.join(), education.join(),
                 awards.join(), certifications.join(), timeline.join());
@@ -76,63 +76,63 @@ public class DatabasePortfolioService implements PortfolioReader {
     }
 
     @Override
-    public Profile getProfile() {
+    public ProfileDto getProfile() {
         return loader.loadProfile();
     }
 
     @Override
-    public About getAbout() {
+    public AboutDto getAbout() {
         return loader.loadAbout();
     }
 
     @Override
-    public List<Strength> getStrengths() {
+    public List<StrengthDto> getStrengths() {
         return loader.loadStrengths();
     }
 
     @Override
-    public List<Achievement> getAchievements() {
+    public List<AchievementDto> getAchievements() {
         return loader.loadAchievements();
     }
 
     @Override
-    public List<Experience> getExperiences() {
+    public List<ExperienceDto> getExperiences() {
         return loader.loadExperiences();
     }
 
     @Override
-    public List<ProjectSummary> getProjects() {
+    public List<ProjectSummaryDto> getProjects() {
         return loader.loadProjects();
     }
 
     @Override
-    public List<TechStackGroup> getTechStack() {
+    public List<TechStackGroupDto> getTechStack() {
         return loader.loadTechStack();
     }
 
     @Override
-    public List<Education> getEducation() {
+    public List<EducationDto> getEducation() {
         return loader.loadEducation();
     }
 
     @Override
-    public List<Award> getAwards() {
+    public List<AwardDto> getAwards() {
         return loader.loadAwards();
     }
 
     @Override
-    public List<Certification> getCertifications() {
+    public List<CertificationDto> getCertifications() {
         return loader.loadCertifications();
     }
 
     @Override
-    public List<TimelineEntry> getTimeline() {
+    public List<TimelineEntryDto> getTimeline() {
         return loader.loadTimeline();
     }
 
     @Override
     @Cacheable(cacheNames = CacheConfig.PROJECT_DETAILS_CACHE, key = "#slug")
-    public ProjectDetailResponse getProjectDetail(String slug) {
+    public ProjectDetailResponseDto getProjectDetail(String slug) {
         return loader.loadProjectDetail(slug);
     }
 }

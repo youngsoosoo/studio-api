@@ -6,7 +6,7 @@ package com.studio.api.portfolio.dto;
  * @param issuer awarding organization / host
  * @param date   free-form date label, e.g. "2023.11"
  */
-public record Award(
+public record AwardDto(
         String id,
         String title,
         String issuer,

@@ -5,13 +5,13 @@ import java.util.List;
 /**
  * Identity / hero section content.
  */
-public record Profile(
+public record ProfileDto(
         String name,
         String title,
         String tagline,
         String location,
         String avatarUrl,
         String resumeUrl,
-        List<SocialLink> socials
+        List<SocialLinkDto> socials
 ) {
 }

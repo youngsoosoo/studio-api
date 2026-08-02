@@ -7,7 +7,7 @@ import java.util.List;
  * mirror the frontend's existing MockProject shape so the card renders
  * unchanged; the remaining fields are an additive superset.
  */
-public record ProjectSummary(
+public record ProjectSummaryDto(
         String id,
         String title,
         String summary,

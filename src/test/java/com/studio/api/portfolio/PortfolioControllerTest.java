@@ -7,14 +7,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.studio.api.common.NotFoundException;
 import com.studio.api.portfolio.controller.PortfolioController;
-import com.studio.api.portfolio.dto.About;
-import com.studio.api.portfolio.dto.PortfolioResponse;
-import com.studio.api.portfolio.dto.Profile;
-import com.studio.api.portfolio.dto.ProjectChallenge;
-import com.studio.api.portfolio.dto.ProjectDetailResponse;
-import com.studio.api.portfolio.dto.ProjectMetric;
-import com.studio.api.portfolio.dto.ProjectProblemCase;
-import com.studio.api.portfolio.dto.ProjectSummary;
+import com.studio.api.portfolio.dto.AboutDto;
+import com.studio.api.portfolio.dto.PortfolioResponseDto;
+import com.studio.api.portfolio.dto.ProfileDto;
+import com.studio.api.portfolio.dto.ProjectChallengeDto;
+import com.studio.api.portfolio.dto.ProjectDetailResponseDto;
+import com.studio.api.portfolio.dto.ProjectMetricDto;
+import com.studio.api.portfolio.dto.ProjectProblemCaseDto;
+import com.studio.api.portfolio.dto.ProjectSummaryDto;
 import com.studio.api.portfolio.service.PortfolioReader;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(PortfolioController.class)
 class PortfolioControllerTest {
 
-    private static final Profile PROFILE = new Profile(
+    private static final ProfileDto PROFILE = new ProfileDto(
             "Test User",
             "Backend Developer",
             "Synthetic test profile",
@@ -40,12 +40,12 @@ class PortfolioControllerTest {
             null,
             List.of());
 
-    private static final About ABOUT = new About(
+    private static final AboutDto ABOUT = new AboutDto(
             "Test introduction",
             List.of("Synthetic paragraph"),
             List.of("Synthetic highlight"));
 
-    private static final ProjectSummary PROJECT = new ProjectSummary(
+    private static final ProjectSummaryDto PROJECT = new ProjectSummaryDto(
             "sample-project",
             "Sample Project",
             "Synthetic project used only by tests",
@@ -57,7 +57,7 @@ class PortfolioControllerTest {
             null,
             true);
 
-    private static final ProjectDetailResponse PROJECT_DETAIL = new ProjectDetailResponse(
+    private static final ProjectDetailResponseDto PROJECT_DETAIL = new ProjectDetailResponseDto(
             PROJECT.id(),
             PROJECT,
             List.of("Synthetic overview"),
@@ -71,15 +71,15 @@ class PortfolioControllerTest {
             PROJECT.tags(),
             null,
             List.of(),
-            List.of(new ProjectProblemCase(
+            List.of(new ProjectProblemCaseDto(
                     "Synthetic problem case",
                     "Synthetic problem definition",
                     List.of("Synthetic solution step"),
-                    List.of(new ProjectChallenge(
+                    List.of(new ProjectChallengeDto(
                             "Synthetic technical challenge",
                             "Synthetic technical result")),
                     List.of("Synthetic case outcome"),
-                    List.of(new ProjectMetric("Synthetic metric", "42%")))));
+                    List.of(new ProjectMetricDto("Synthetic metric", "42%")))));
 
     @Autowired
     private MockMvc mockMvc;
@@ -89,7 +89,7 @@ class PortfolioControllerTest {
 
     @BeforeEach
     void setUpReader() {
-        when(portfolioReader.getPortfolio()).thenReturn(new PortfolioResponse(
+        when(portfolioReader.getPortfolio()).thenReturn(new PortfolioResponseDto(
                 PROFILE,
                 ABOUT,
                 List.of(),

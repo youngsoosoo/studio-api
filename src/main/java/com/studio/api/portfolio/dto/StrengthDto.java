@@ -5,7 +5,7 @@ package com.studio.api.portfolio.dto;
  *
  * @param icon short icon key the frontend maps to an SVG
  */
-public record Strength(
+public record StrengthDto(
         String id,
         String title,
         String description,

@@ -1,46 +1,46 @@
 package com.studio.api.portfolio.service;
 
-import com.studio.api.portfolio.dto.About;
-import com.studio.api.portfolio.dto.Achievement;
-import com.studio.api.portfolio.dto.Award;
-import com.studio.api.portfolio.dto.Certification;
-import com.studio.api.portfolio.dto.Education;
-import com.studio.api.portfolio.dto.Experience;
-import com.studio.api.portfolio.dto.PortfolioResponse;
-import com.studio.api.portfolio.dto.Profile;
-import com.studio.api.portfolio.dto.ProjectDetailResponse;
-import com.studio.api.portfolio.dto.ProjectSummary;
-import com.studio.api.portfolio.dto.Strength;
-import com.studio.api.portfolio.dto.TechStackGroup;
-import com.studio.api.portfolio.dto.TimelineEntry;
+import com.studio.api.portfolio.dto.AboutDto;
+import com.studio.api.portfolio.dto.AchievementDto;
+import com.studio.api.portfolio.dto.AwardDto;
+import com.studio.api.portfolio.dto.CertificationDto;
+import com.studio.api.portfolio.dto.EducationDto;
+import com.studio.api.portfolio.dto.ExperienceDto;
+import com.studio.api.portfolio.dto.PortfolioResponseDto;
+import com.studio.api.portfolio.dto.ProfileDto;
+import com.studio.api.portfolio.dto.ProjectDetailResponseDto;
+import com.studio.api.portfolio.dto.ProjectSummaryDto;
+import com.studio.api.portfolio.dto.StrengthDto;
+import com.studio.api.portfolio.dto.TechStackGroupDto;
+import com.studio.api.portfolio.dto.TimelineEntryDto;
 import java.util.List;
 
 /** Read side of the portfolio API, implemented by {@link DatabasePortfolioService}. */
 public interface PortfolioReader {
 
-    PortfolioResponse getPortfolio();
+    PortfolioResponseDto getPortfolio();
 
-    Profile getProfile();
+    ProfileDto getProfile();
 
-    About getAbout();
+    AboutDto getAbout();
 
-    List<Strength> getStrengths();
+    List<StrengthDto> getStrengths();
 
-    List<Achievement> getAchievements();
+    List<AchievementDto> getAchievements();
 
-    List<Experience> getExperiences();
+    List<ExperienceDto> getExperiences();
 
-    List<ProjectSummary> getProjects();
+    List<ProjectSummaryDto> getProjects();
 
-    List<TechStackGroup> getTechStack();
+    List<TechStackGroupDto> getTechStack();
 
-    List<Education> getEducation();
+    List<EducationDto> getEducation();
 
-    List<Award> getAwards();
+    List<AwardDto> getAwards();
 
-    List<Certification> getCertifications();
+    List<CertificationDto> getCertifications();
 
-    List<TimelineEntry> getTimeline();
+    List<TimelineEntryDto> getTimeline();
 
     /**
      * Full case study for the project with the given slug.
@@ -48,5 +48,5 @@ public interface PortfolioReader {
      * @throws com.studio.api.common.NotFoundException when the project does not
      *         exist or has no case study
      */
-    ProjectDetailResponse getProjectDetail(String slug);
+    ProjectDetailResponseDto getProjectDetail(String slug);
 }

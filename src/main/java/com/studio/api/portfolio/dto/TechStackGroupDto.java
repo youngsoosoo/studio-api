@@ -5,5 +5,5 @@ import java.util.List;
 /**
  * A category of technologies, e.g. "Frontend", "Backend", "Infra".
  */
-public record TechStackGroup(String category, List<TechItem> items) {
+public record TechStackGroupDto(String category, List<TechItemDto> items) {
 }

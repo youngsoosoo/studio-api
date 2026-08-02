@@ -9,7 +9,7 @@ import java.util.List;
  * @param achievements bullet points of notable outcomes
  * @param stack        technologies used in this role
  */
-public record Experience(
+public record ExperienceDto(
         String id,
         String company,
         String role,

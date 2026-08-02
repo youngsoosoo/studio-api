@@ -1,7 +1,7 @@
 package com.studio.api.image.controller;
 
-import com.studio.api.common.ApiResponse;
-import com.studio.api.image.dto.ImageResponse;
+import com.studio.api.common.ApiResponseDto;
+import com.studio.api.image.dto.ImageResponseDto;
 import com.studio.api.image.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,13 +31,13 @@ public class AdminImageController {
     private final ImageService imageService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<ImageResponse>> upload(
+    public ResponseEntity<ApiResponseDto<ImageResponseDto>> upload(
             @RequestParam("file") MultipartFile file,
             @RequestParam(required = false) String target,
             @RequestParam(required = false) String project,
             @RequestParam(required = false) String alt,
             @RequestParam(required = false) String caption) {
-        ImageResponse response = imageService.upload(file, target, project, alt, caption);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
+        ImageResponseDto response = imageService.upload(file, target, project, alt, caption);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseDto.ok(response));
     }
 }

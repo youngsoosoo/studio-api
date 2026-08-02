@@ -2,7 +2,7 @@ package com.studio.api.image.service;
 
 import com.studio.api.common.NotFoundException;
 import com.studio.api.config.CacheConfig;
-import com.studio.api.image.dto.ImageResponse;
+import com.studio.api.image.dto.ImageResponseDto;
 import com.studio.api.image.entity.ImageEntity;
 import com.studio.api.image.repository.ImageRepository;
 import com.studio.api.portfolio.entity.ProjectDetailEntity;
@@ -46,7 +46,7 @@ public class ImageService {
 
     @Transactional
     @CacheEvict(cacheNames = {CacheConfig.PORTFOLIO_CACHE, CacheConfig.PROJECT_DETAILS_CACHE}, allEntries = true)
-    public ImageResponse upload(MultipartFile file, String target, String projectSlug, String alt, String caption) {
+    public ImageResponseDto upload(MultipartFile file, String target, String projectSlug, String alt, String caption) {
         validateTarget(target, projectSlug);
         String storedName = fileStorageService.store(file);
         registerRollbackCleanup(storedName);
@@ -59,7 +59,7 @@ public class ImageService {
         if (target != null && !target.isBlank()) {
             attach(image, target, projectSlug, alt, caption);
         }
-        return new ImageResponse(
+        return new ImageResponseDto(
                 image.getId(),
                 imageUrlResolver.resolve(image),
                 image.getOriginalName(),

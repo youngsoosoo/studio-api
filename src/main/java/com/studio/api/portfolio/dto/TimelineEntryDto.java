@@ -6,7 +6,7 @@ package com.studio.api.portfolio.dto;
  * @param date free-form date label, e.g. "2024.06"
  * @param type one of "work" | "education" | "milestone"
  */
-public record TimelineEntry(
+public record TimelineEntryDto(
         String id,
         String date,
         String title,

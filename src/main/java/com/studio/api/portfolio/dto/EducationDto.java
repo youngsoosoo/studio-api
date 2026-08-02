@@ -5,7 +5,7 @@ package com.studio.api.portfolio.dto;
  *
  * @param period free-form range, e.g. "2017.03 - 2021.02"
  */
-public record Education(
+public record EducationDto(
         String id,
         String school,
         String degree,

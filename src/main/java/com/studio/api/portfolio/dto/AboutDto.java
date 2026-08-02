@@ -3,9 +3,9 @@ package com.studio.api.portfolio.dto;
 import java.util.List;
 
 /**
- * "About me" narrative section.
+ * "AboutDto me" narrative section.
  */
-public record About(
+public record AboutDto(
         String headline,
         List<String> paragraphs,
         List<String> highlights

@@ -7,7 +7,7 @@ package com.studio.api.portfolio.dto;
  * @param date         free-form date label, e.g. "2022.08"
  * @param credentialId credential / license number (nullable)
  */
-public record Certification(
+public record CertificationDto(
         String id,
         String name,
         String issuer,

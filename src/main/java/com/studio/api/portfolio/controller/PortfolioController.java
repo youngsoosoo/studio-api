@@ -1,19 +1,19 @@
 package com.studio.api.portfolio.controller;
 
-import com.studio.api.common.ApiResponse;
-import com.studio.api.portfolio.dto.About;
-import com.studio.api.portfolio.dto.Achievement;
-import com.studio.api.portfolio.dto.Award;
-import com.studio.api.portfolio.dto.Certification;
-import com.studio.api.portfolio.dto.Education;
-import com.studio.api.portfolio.dto.Experience;
-import com.studio.api.portfolio.dto.PortfolioResponse;
-import com.studio.api.portfolio.dto.Profile;
-import com.studio.api.portfolio.dto.ProjectDetailResponse;
-import com.studio.api.portfolio.dto.ProjectSummary;
-import com.studio.api.portfolio.dto.Strength;
-import com.studio.api.portfolio.dto.TechStackGroup;
-import com.studio.api.portfolio.dto.TimelineEntry;
+import com.studio.api.common.ApiResponseDto;
+import com.studio.api.portfolio.dto.AboutDto;
+import com.studio.api.portfolio.dto.AchievementDto;
+import com.studio.api.portfolio.dto.AwardDto;
+import com.studio.api.portfolio.dto.CertificationDto;
+import com.studio.api.portfolio.dto.EducationDto;
+import com.studio.api.portfolio.dto.ExperienceDto;
+import com.studio.api.portfolio.dto.PortfolioResponseDto;
+import com.studio.api.portfolio.dto.ProfileDto;
+import com.studio.api.portfolio.dto.ProjectDetailResponseDto;
+import com.studio.api.portfolio.dto.ProjectSummaryDto;
+import com.studio.api.portfolio.dto.StrengthDto;
+import com.studio.api.portfolio.dto.TechStackGroupDto;
+import com.studio.api.portfolio.dto.TimelineEntryDto;
 import com.studio.api.portfolio.service.PortfolioReader;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -40,79 +40,79 @@ public class PortfolioController {
 
     /** 프로필부터 타임라인까지 포트폴리오의 모든 섹션을 한 번에 조회한다. */
     @GetMapping
-    public ApiResponse<PortfolioResponse> getPortfolio() {
-        return ApiResponse.ok(portfolioReader.getPortfolio());
+    public ApiResponseDto<PortfolioResponseDto> getPortfolio() {
+        return ApiResponseDto.ok(portfolioReader.getPortfolio());
     }
 
     /** 이름, 직무, 소개 문구, 소셜 링크 등 기본 프로필 정보를 조회한다. */
     @GetMapping("/profile")
-    public ApiResponse<Profile> getProfile() {
-        return ApiResponse.ok(portfolioReader.getProfile());
+    public ApiResponseDto<ProfileDto> getProfile() {
+        return ApiResponseDto.ok(portfolioReader.getProfile());
     }
 
     /** 자기소개 본문과 주요 하이라이트를 조회한다. */
     @GetMapping("/about")
-    public ApiResponse<About> getAbout() {
-        return ApiResponse.ok(portfolioReader.getAbout());
+    public ApiResponseDto<AboutDto> getAbout() {
+        return ApiResponseDto.ok(portfolioReader.getAbout());
     }
 
     /** 개발자로서의 핵심 강점 목록을 노출 순서대로 조회한다. */
     @GetMapping("/strengths")
-    public ApiResponse<List<Strength>> getStrengths() {
-        return ApiResponse.ok(portfolioReader.getStrengths());
+    public ApiResponseDto<List<StrengthDto>> getStrengths() {
+        return ApiResponseDto.ok(portfolioReader.getStrengths());
     }
 
     /** 성능 개선과 운영 안정화 등 주요 성과 목록을 조회한다. */
     @GetMapping("/achievements")
-    public ApiResponse<List<Achievement>> getAchievements() {
-        return ApiResponse.ok(portfolioReader.getAchievements());
+    public ApiResponseDto<List<AchievementDto>> getAchievements() {
+        return ApiResponseDto.ok(portfolioReader.getAchievements());
     }
 
     /** 회사별 경력, 담당 업무, 기술 스택 정보를 조회한다. */
     @GetMapping("/experiences")
-    public ApiResponse<List<Experience>> getExperiences() {
-        return ApiResponse.ok(portfolioReader.getExperiences());
+    public ApiResponseDto<List<ExperienceDto>> getExperiences() {
+        return ApiResponseDto.ok(portfolioReader.getExperiences());
     }
 
     /** 프로젝트 카드에 표시할 프로젝트 요약 목록을 조회한다. */
     @GetMapping("/projects")
-    public ApiResponse<List<ProjectSummary>> getProjects() {
-        return ApiResponse.ok(portfolioReader.getProjects());
+    public ApiResponseDto<List<ProjectSummaryDto>> getProjects() {
+        return ApiResponseDto.ok(portfolioReader.getProjects());
     }
 
     /** 프로젝트 슬러그로 문제, 접근 방식, 성과 등 상세 사례를 조회한다. */
     @GetMapping("/projects/{slug}")
-    public ApiResponse<ProjectDetailResponse> getProjectDetail(@PathVariable String slug) {
-        return ApiResponse.ok(portfolioReader.getProjectDetail(slug));
+    public ApiResponseDto<ProjectDetailResponseDto> getProjectDetail(@PathVariable String slug) {
+        return ApiResponseDto.ok(portfolioReader.getProjectDetail(slug));
     }
 
     /** 카테고리별 기술 스택과 숙련도 정보를 조회한다. */
     @GetMapping("/tech-stack")
-    public ApiResponse<List<TechStackGroup>> getTechStack() {
-        return ApiResponse.ok(portfolioReader.getTechStack());
+    public ApiResponseDto<List<TechStackGroupDto>> getTechStack() {
+        return ApiResponseDto.ok(portfolioReader.getTechStack());
     }
 
     /** 학력 정보를 노출 순서대로 조회한다. */
     @GetMapping("/education")
-    public ApiResponse<List<Education>> getEducation() {
-        return ApiResponse.ok(portfolioReader.getEducation());
+    public ApiResponseDto<List<EducationDto>> getEducation() {
+        return ApiResponseDto.ok(portfolioReader.getEducation());
     }
 
     /** 수상 경력 정보를 노출 순서대로 조회한다. */
     @GetMapping("/awards")
-    public ApiResponse<List<Award>> getAwards() {
-        return ApiResponse.ok(portfolioReader.getAwards());
+    public ApiResponseDto<List<AwardDto>> getAwards() {
+        return ApiResponseDto.ok(portfolioReader.getAwards());
     }
 
     /** 자격증과 인증 정보를 노출 순서대로 조회한다. */
     @GetMapping("/certifications")
-    public ApiResponse<List<Certification>> getCertifications() {
-        return ApiResponse.ok(portfolioReader.getCertifications());
+    public ApiResponseDto<List<CertificationDto>> getCertifications() {
+        return ApiResponseDto.ok(portfolioReader.getCertifications());
     }
 
     /** 경력과 주요 이력을 시간순 타임라인 형태로 조회한다. */
     @GetMapping("/timeline")
-    public ApiResponse<List<TimelineEntry>> getTimeline() {
-        return ApiResponse.ok(portfolioReader.getTimeline());
+    public ApiResponseDto<List<TimelineEntryDto>> getTimeline() {
+        return ApiResponseDto.ok(portfolioReader.getTimeline());
     }
 }

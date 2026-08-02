@@ -1,25 +1,25 @@
 package com.studio.api.portfolio.service;
 
 import com.studio.api.image.service.ImageUrlResolver;
-import com.studio.api.portfolio.dto.About;
-import com.studio.api.portfolio.dto.Achievement;
-import com.studio.api.portfolio.dto.Award;
-import com.studio.api.portfolio.dto.Certification;
-import com.studio.api.portfolio.dto.Education;
-import com.studio.api.portfolio.dto.Experience;
-import com.studio.api.portfolio.dto.Profile;
-import com.studio.api.portfolio.dto.ProjectChallenge;
-import com.studio.api.portfolio.dto.ProjectDetailResponse;
-import com.studio.api.portfolio.dto.ProjectImage;
-import com.studio.api.portfolio.dto.ProjectMetric;
-import com.studio.api.portfolio.dto.ProjectProblem;
-import com.studio.api.portfolio.dto.ProjectProblemCase;
-import com.studio.api.portfolio.dto.ProjectSummary;
-import com.studio.api.portfolio.dto.SocialLink;
-import com.studio.api.portfolio.dto.Strength;
-import com.studio.api.portfolio.dto.TechItem;
-import com.studio.api.portfolio.dto.TechStackGroup;
-import com.studio.api.portfolio.dto.TimelineEntry;
+import com.studio.api.portfolio.dto.AboutDto;
+import com.studio.api.portfolio.dto.AchievementDto;
+import com.studio.api.portfolio.dto.AwardDto;
+import com.studio.api.portfolio.dto.CertificationDto;
+import com.studio.api.portfolio.dto.EducationDto;
+import com.studio.api.portfolio.dto.ExperienceDto;
+import com.studio.api.portfolio.dto.ProfileDto;
+import com.studio.api.portfolio.dto.ProjectChallengeDto;
+import com.studio.api.portfolio.dto.ProjectDetailResponseDto;
+import com.studio.api.portfolio.dto.ProjectImageDto;
+import com.studio.api.portfolio.dto.ProjectMetricDto;
+import com.studio.api.portfolio.dto.ProjectProblemDto;
+import com.studio.api.portfolio.dto.ProjectProblemCaseDto;
+import com.studio.api.portfolio.dto.ProjectSummaryDto;
+import com.studio.api.portfolio.dto.SocialLinkDto;
+import com.studio.api.portfolio.dto.StrengthDto;
+import com.studio.api.portfolio.dto.TechItemDto;
+import com.studio.api.portfolio.dto.TechStackGroupDto;
+import com.studio.api.portfolio.dto.TimelineEntryDto;
 import com.studio.api.portfolio.entity.AboutEntity;
 import com.studio.api.portfolio.entity.AchievementEntity;
 import com.studio.api.portfolio.entity.AwardEntity;
@@ -47,8 +47,8 @@ public class PortfolioMapper {
 
     private final ImageUrlResolver imageUrlResolver;
 
-    public Profile toProfile(ProfileEntity entity) {
-        return new Profile(
+    public ProfileDto toProfile(ProfileEntity entity) {
+        return new ProfileDto(
                 entity.getName(),
                 entity.getTitle(),
                 entity.getTagline(),
@@ -56,29 +56,29 @@ public class PortfolioMapper {
                 imageUrlResolver.resolve(entity.getAvatar()),
                 entity.getResumeUrl(),
                 entity.getSocials().stream()
-                        .map(s -> new SocialLink(s.getLabel(), s.getUrl(), s.getIcon()))
+                        .map(s -> new SocialLinkDto(s.getLabel(), s.getUrl(), s.getIcon()))
                         .toList()
         );
     }
 
-    public About toAbout(AboutEntity entity) {
-        return new About(
+    public AboutDto toAbout(AboutEntity entity) {
+        return new AboutDto(
                 entity.getHeadline(),
                 List.copyOf(entity.getParagraphs()),
                 List.copyOf(entity.getHighlights())
         );
     }
 
-    public Strength toStrength(StrengthEntity entity) {
-        return new Strength(entity.getSlug(), entity.getTitle(), entity.getDescription(), entity.getIcon());
+    public StrengthDto toStrength(StrengthEntity entity) {
+        return new StrengthDto(entity.getSlug(), entity.getTitle(), entity.getDescription(), entity.getIcon());
     }
 
-    public Achievement toAchievement(AchievementEntity entity) {
-        return new Achievement(entity.getSlug(), entity.getTitle(), entity.getDescription(), entity.getMetric());
+    public AchievementDto toAchievement(AchievementEntity entity) {
+        return new AchievementDto(entity.getSlug(), entity.getTitle(), entity.getDescription(), entity.getMetric());
     }
 
-    public Experience toExperience(ExperienceEntity entity) {
-        return new Experience(
+    public ExperienceDto toExperience(ExperienceEntity entity) {
+        return new ExperienceDto(
                 entity.getSlug(),
                 entity.getCompany(),
                 entity.getRole(),
@@ -90,8 +90,8 @@ public class PortfolioMapper {
         );
     }
 
-    public ProjectSummary toProjectSummary(ProjectEntity entity) {
-        return new ProjectSummary(
+    public ProjectSummaryDto toProjectSummary(ProjectEntity entity) {
+        return new ProjectSummaryDto(
                 entity.getSlug(),
                 entity.getTitle(),
                 entity.getSummary(),
@@ -105,75 +105,75 @@ public class PortfolioMapper {
         );
     }
 
-    public ProjectDetailResponse toProjectDetail(ProjectDetailEntity entity) {
-        return new ProjectDetailResponse(
+    public ProjectDetailResponseDto toProjectDetail(ProjectDetailEntity entity) {
+        return new ProjectDetailResponseDto(
                 entity.getProject().getSlug(),
                 toProjectSummary(entity.getProject()),
                 List.copyOf(entity.getOverview()),
                 entity.getProblem(),
                 entity.getProblems().stream()
-                        .map(p -> new ProjectProblem(p.getTitle(), p.getDescription()))
+                        .map(p -> new ProjectProblemDto(p.getTitle(), p.getDescription()))
                         .toList(),
                 List.copyOf(entity.getApproach()),
                 List.copyOf(entity.getContributions()),
                 entity.getChallenges().stream()
-                        .map(c -> new ProjectChallenge(c.getTitle(), c.getDescription()))
+                        .map(c -> new ProjectChallengeDto(c.getTitle(), c.getDescription()))
                         .toList(),
                 List.copyOf(entity.getOutcomes()),
                 entity.getMetrics().stream()
-                        .map(m -> new ProjectMetric(m.getLabel(), m.getMetricValue()))
+                        .map(m -> new ProjectMetricDto(m.getLabel(), m.getMetricValue()))
                         .toList(),
                 List.copyOf(entity.getStack()),
                 entity.getTeam(),
                 entity.getImages().stream()
-                        .map(i -> new ProjectImage(
+                        .map(i -> new ProjectImageDto(
                                 imageUrlResolver.resolve(i.getImage()), i.getAlt(), i.getCaption()))
                         .toList(),
                 entity.getProblems().stream()
-                        .map(p -> new ProjectProblemCase(
+                        .map(p -> new ProjectProblemCaseDto(
                                 p.getTitle(),
                                 p.getDescription(),
                                 List.copyOf(p.getApproach()),
                                 p.getChallenges().stream()
-                                        .map(c -> new ProjectChallenge(c.getTitle(), c.getDescription()))
+                                        .map(c -> new ProjectChallengeDto(c.getTitle(), c.getDescription()))
                                         .toList(),
                                 List.copyOf(p.getOutcomes()),
                                 p.getMetrics().stream()
-                                        .map(m -> new ProjectMetric(m.getLabel(), m.getMetricValue()))
+                                        .map(m -> new ProjectMetricDto(m.getLabel(), m.getMetricValue()))
                                         .toList()))
                         .toList()
         );
     }
 
-    public TechStackGroup toTechStackGroup(TechStackGroupEntity entity) {
-        return new TechStackGroup(
+    public TechStackGroupDto toTechStackGroup(TechStackGroupEntity entity) {
+        return new TechStackGroupDto(
                 entity.getCategory(),
                 entity.getItems().stream()
-                        .map(i -> new TechItem(i.getName(), i.getIcon(), i.getLevel()))
+                        .map(i -> new TechItemDto(i.getName(), i.getIcon(), i.getLevel()))
                         .toList()
         );
     }
 
-    public Education toEducation(EducationEntity entity) {
-        return new Education(
+    public EducationDto toEducation(EducationEntity entity) {
+        return new EducationDto(
                 entity.getSlug(), entity.getSchool(), entity.getDegree(),
                 entity.getPeriod(), entity.getDescription());
     }
 
-    public Award toAward(AwardEntity entity) {
-        return new Award(
+    public AwardDto toAward(AwardEntity entity) {
+        return new AwardDto(
                 entity.getSlug(), entity.getTitle(), entity.getIssuer(),
                 entity.getDateText(), entity.getDescription());
     }
 
-    public Certification toCertification(CertificationEntity entity) {
-        return new Certification(
+    public CertificationDto toCertification(CertificationEntity entity) {
+        return new CertificationDto(
                 entity.getSlug(), entity.getName(), entity.getIssuer(),
                 entity.getDateText(), entity.getCredentialId());
     }
 
-    public TimelineEntry toTimelineEntry(TimelineEntryEntity entity) {
-        return new TimelineEntry(
+    public TimelineEntryDto toTimelineEntry(TimelineEntryEntity entity) {
+        return new TimelineEntryDto(
                 entity.getSlug(), entity.getDateText(), entity.getTitle(),
                 entity.getDescription(), entity.getEntryType());
     }

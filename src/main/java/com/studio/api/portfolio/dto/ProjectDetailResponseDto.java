@@ -11,20 +11,20 @@ import java.util.List;
  * render its header from this one response instead of refetching the whole
  * portfolio.
  */
-public record ProjectDetailResponse(
+public record ProjectDetailResponseDto(
         String id,
-        ProjectSummary project,
+        ProjectSummaryDto project,
         List<String> overview,
         String problem,
-        List<ProjectProblem> problems,
+        List<ProjectProblemDto> problems,
         List<String> approach,
         List<String> contributions,
-        List<ProjectChallenge> challenges,
+        List<ProjectChallengeDto> challenges,
         List<String> outcomes,
-        List<ProjectMetric> metrics,
+        List<ProjectMetricDto> metrics,
         List<String> stack,
         String team,
-        List<ProjectImage> images,
-        List<ProjectProblemCase> problemCases
+        List<ProjectImageDto> images,
+        List<ProjectProblemCaseDto> problemCases
 ) {
 }

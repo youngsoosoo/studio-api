@@ -1,18 +1,18 @@
 package com.studio.api.portfolio.service;
 
 import com.studio.api.common.NotFoundException;
-import com.studio.api.portfolio.dto.About;
-import com.studio.api.portfolio.dto.Achievement;
-import com.studio.api.portfolio.dto.Award;
-import com.studio.api.portfolio.dto.Certification;
-import com.studio.api.portfolio.dto.Education;
-import com.studio.api.portfolio.dto.Experience;
-import com.studio.api.portfolio.dto.Profile;
-import com.studio.api.portfolio.dto.ProjectDetailResponse;
-import com.studio.api.portfolio.dto.ProjectSummary;
-import com.studio.api.portfolio.dto.Strength;
-import com.studio.api.portfolio.dto.TechStackGroup;
-import com.studio.api.portfolio.dto.TimelineEntry;
+import com.studio.api.portfolio.dto.AboutDto;
+import com.studio.api.portfolio.dto.AchievementDto;
+import com.studio.api.portfolio.dto.AwardDto;
+import com.studio.api.portfolio.dto.CertificationDto;
+import com.studio.api.portfolio.dto.EducationDto;
+import com.studio.api.portfolio.dto.ExperienceDto;
+import com.studio.api.portfolio.dto.ProfileDto;
+import com.studio.api.portfolio.dto.ProjectDetailResponseDto;
+import com.studio.api.portfolio.dto.ProjectSummaryDto;
+import com.studio.api.portfolio.dto.StrengthDto;
+import com.studio.api.portfolio.dto.TechStackGroupDto;
+import com.studio.api.portfolio.dto.TimelineEntryDto;
 import com.studio.api.portfolio.repository.AboutRepository;
 import com.studio.api.portfolio.repository.AchievementRepository;
 import com.studio.api.portfolio.repository.AwardRepository;
@@ -58,84 +58,84 @@ public class PortfolioSectionLoader {
     private final PortfolioMapper mapper;
 
     @Transactional(readOnly = true)
-    public Profile loadProfile() {
+    public ProfileDto loadProfile() {
         return profileRepository.findById(SINGLETON_ID)
                 .map(mapper::toProfile)
                 .orElseThrow(() -> new NotFoundException("Profile not found"));
     }
 
     @Transactional(readOnly = true)
-    public About loadAbout() {
+    public AboutDto loadAbout() {
         return aboutRepository.findById(SINGLETON_ID)
                 .map(mapper::toAbout)
                 .orElseThrow(() -> new NotFoundException("About not found"));
     }
 
     @Transactional(readOnly = true)
-    public List<Strength> loadStrengths() {
+    public List<StrengthDto> loadStrengths() {
         return strengthRepository.findAllByOrderBySortOrderAsc().stream()
                 .map(mapper::toStrength)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<Achievement> loadAchievements() {
+    public List<AchievementDto> loadAchievements() {
         return achievementRepository.findAllByOrderBySortOrderAsc().stream()
                 .map(mapper::toAchievement)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<Experience> loadExperiences() {
+    public List<ExperienceDto> loadExperiences() {
         return experienceRepository.findAllByOrderBySortOrderAsc().stream()
                 .map(mapper::toExperience)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<ProjectSummary> loadProjects() {
+    public List<ProjectSummaryDto> loadProjects() {
         return projectRepository.findAllByOrderBySortOrderAsc().stream()
                 .map(mapper::toProjectSummary)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<TechStackGroup> loadTechStack() {
+    public List<TechStackGroupDto> loadTechStack() {
         return techStackGroupRepository.findAllByOrderBySortOrderAsc().stream()
                 .map(mapper::toTechStackGroup)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<Education> loadEducation() {
+    public List<EducationDto> loadEducation() {
         return educationRepository.findAllByOrderBySortOrderAsc().stream()
                 .map(mapper::toEducation)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<Award> loadAwards() {
+    public List<AwardDto> loadAwards() {
         return awardRepository.findAllByOrderBySortOrderAsc().stream()
                 .map(mapper::toAward)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<Certification> loadCertifications() {
+    public List<CertificationDto> loadCertifications() {
         return certificationRepository.findAllByOrderBySortOrderAsc().stream()
                 .map(mapper::toCertification)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<TimelineEntry> loadTimeline() {
+    public List<TimelineEntryDto> loadTimeline() {
         return timelineEntryRepository.findAllByOrderBySortOrderAsc().stream()
                 .map(mapper::toTimelineEntry)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public ProjectDetailResponse loadProjectDetail(String slug) {
+    public ProjectDetailResponseDto loadProjectDetail(String slug) {
         return projectDetailRepository.findByProjectSlug(slug)
                 .map(mapper::toProjectDetail)
                 .orElseThrow(() -> new NotFoundException("Project detail not found: " + slug));
