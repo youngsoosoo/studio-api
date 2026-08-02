@@ -83,7 +83,7 @@ class AdminImageControllerTest {
     }
 
     @Test
-    void servesUploadedFileWithCorsForTheLocalWebAppAndPreview() throws Exception {
+    void servesUploadedFileWithCorsForAllowedWebOrigins() throws Exception {
         MvcResult uploadResult = mockMvc.perform(multipart("/api/admin/images").file(pngFile())
                 .header(AdminKeyInterceptor.HEADER, ADMIN_KEY))
             .andExpect(status().isCreated())
@@ -103,6 +103,12 @@ class AdminImageControllerTest {
         mockMvc.perform(get(filePath).header("Origin", "http://localhost:4173"))
             .andExpect(status().isOk())
             .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:4173"));
+
+        mockMvc.perform(get(filePath).header("Origin", "https://studio-web-olive.vercel.app"))
+            .andExpect(status().isOk())
+            .andExpect(header().string(
+                    "Access-Control-Allow-Origin",
+                    "https://studio-web-olive.vercel.app"));
     }
 
     @Test

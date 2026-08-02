@@ -5,14 +5,15 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Allows the local studio-web dev server to call the API during integration.
- * Kept intentionally narrow (single localhost origin, read-only methods);
- * widen via configuration when deploying.
+ * Allows the deployed studio-web app and local development servers to call
+ * the public read APIs and load uploaded files. The allowlist stays explicit
+ * so arbitrary origins cannot use the API from a browser.
  */
 @Configuration
 public class WebCorsConfig implements WebMvcConfigurer {
 
-    private static final String[] LOCAL_WEB_ORIGINS = {
+    private static final String[] WEB_ORIGINS = {
+            "https://studio-web-olive.vercel.app",
             "http://localhost:5173",
             "http://localhost:4173"
     };
@@ -20,13 +21,13 @@ public class WebCorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins(LOCAL_WEB_ORIGINS)
+                .allowedOrigins(WEB_ORIGINS)
                 .allowedMethods("GET", "OPTIONS")
                 .allowedHeaders("*")
                 .maxAge(3600);
 
         registry.addMapping("/files/**")
-                .allowedOrigins(LOCAL_WEB_ORIGINS)
+                .allowedOrigins(WEB_ORIGINS)
                 .allowedMethods("GET", "HEAD", "OPTIONS")
                 .allowedHeaders("*")
                 .maxAge(3600);

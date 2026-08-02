@@ -2,6 +2,7 @@ package com.studio.api.portfolio;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -109,8 +110,12 @@ class PortfolioControllerTest {
 
     @Test
     void returnsAggregatedPortfolio() throws Exception {
-        mockMvc.perform(get("/api/portfolio"))
+        mockMvc.perform(get("/api/portfolio")
+                .header("Origin", "https://studio-web-olive.vercel.app"))
             .andExpect(status().isOk())
+            .andExpect(header().string(
+                    "Access-Control-Allow-Origin",
+                    "https://studio-web-olive.vercel.app"))
             .andExpect(jsonPath("$.status").value("success"))
             .andExpect(jsonPath("$.error").doesNotExist())
             .andExpect(jsonPath("$.data.profile.name").value("Test User"))

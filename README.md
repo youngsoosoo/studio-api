@@ -197,7 +197,7 @@ com.studio.api
 │   ├── GlobalExceptionHandler.java  예외 → 에러 봉투 (404/401/400/413/500)
 │   ├── NotFoundException.java  UnauthorizedException.java
 ├── config/
-│   ├── WebCorsConfig.java      localhost:5173 CORS
+│   ├── WebCorsConfig.java      로컬 개발 + Vercel 프런트 CORS
 │   ├── WebConfig.java          /files/** 정적 서빙 + admin 인터셉터 등록
 │   └── AdminKeyInterceptor.java  /api/admin/** X-Admin-Key 검사
 ├── image/                      이미지 업로드 모듈
