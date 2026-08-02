@@ -1,8 +1,9 @@
 # studio-api
 
 studio 포트폴리오 백엔드 API. **Spring Boot 3.5 + Java 17 + Gradle + JPA + PostgreSQL** 스택으로 구성되어 있다.
-포트폴리오 콘텐츠는 PostgreSQL에 저장되며, 애플리케이션은 기존 스키마와 데이터를 읽기만 하고
-시작 시 초기 데이터나 스키마를 자동 생성하지 않는다.
+포트폴리오 콘텐츠는 PostgreSQL에 저장된다. 애플리케이션 시작 시에는 기존 스키마를 검증할 뿐
+초기 데이터나 스키마를 자동 생성·변경하지 않는다. 포트폴리오 조회 API는 읽기 전용이지만,
+관리자 이미지 업로드 API를 호출하면 이미지 메타데이터와 대상 연결 정보가 DB에 저장된다.
 
 ## 요구 사항
 
@@ -17,7 +18,7 @@ studio 포트폴리오 백엔드 API. **Spring Boot 3.5 + Java 17 + Gradle + JPA
 
 ```bash
 # 프로젝트 루트에 .env 파일을 만들고 아래 표의 값을 입력한다.
-docker compose up -d
+docker compose up -d       # 신규 DB를 만들거나 계획된 재기동 때만 실행
 docker compose ps         # healthy 확인
 ```
 
@@ -34,10 +35,24 @@ docker compose ps         # healthy 확인
 > 🔒 포트는 **`127.0.0.1` 에만 바인딩**된다. 외부에서 직접 붙지 못하며, 원격에서는 SSH 터널로
 > 접근한다(아래 "EC2 배포" 참고). 보안 그룹/방화벽에서 5432 를 열지 말 것.
 
-> ⚠️ 애플리케이션은 `ddl-auto: validate`로 기존 스키마를 검증할 뿐 생성하거나 수정하지 않는다.
-> DB 변경이 필요하면 [`db/README.md`](db/README.md)의 규칙에 따라 검토용 SQL을 작성하고,
-> 사용자 또는 별도로 승인된 배포 시스템이 실행한다. 이 저장소에는 운영 초기 데이터와 DB dump를
-> 보관하지 않는다.
+> ⚠️ 애플리케이션 시작 시 Hibernate는 `ddl-auto: validate`로 기존 스키마를 검증할 뿐 생성하거나 수정하지 않는다.
+> DB 스키마나 데이터 변경은 애플리케이션 실행과 분리된 승인 절차에서만 수행한다.
+> 이 저장소에는 운영 초기 데이터, 실행용 SQL, DB dump를 보관하지 않는다.
+
+### 이미 운영 중인 EC2 PostgreSQL 보호
+
+EC2에서 PostgreSQL 컨테이너가 이미 `healthy`라면 신규 구축 단계와 `docker compose up -d`를
+반복할 필요가 없다. 먼저 `docker compose ps`로 현재 상태만 확인한다.
+
+- `docker compose down -v`, `docker volume rm`, `docker system prune --volumes`를 실행하지 않는다.
+- `docker compose down`은 볼륨을 유지하지만 컨테이너를 중단하므로 계획된 점검 외에는 실행하지 않는다.
+- `DB_NAME`, `DB_USER`, `DB_PASSWORD`는 빈 볼륨 최초 초기화에 사용된다. 기존 볼륨에서 값을 바꿔도
+  기존 데이터베이스 사용자나 비밀번호가 자동으로 변경되지 않는다.
+- `docker-compose.yml`이나 `.env`를 변경한 뒤 `docker compose up -d`를 실행하면 컨테이너가
+  재생성될 수 있으므로, 변경 내용과 named volume 연결을 먼저 검토한다.
+- `./gradlew test`와 `./gradlew build`의 테스트는 H2를 사용하므로 EC2 PostgreSQL에 연결하지 않는다.
+- `bootRun`은 설정된 `DB_URL`의 DB에 연결해 스키마를 검증하고 데이터를 조회한다. 관리자 이미지
+  업로드 API를 실제 호출할 때만 해당 DB에 쓰기가 발생한다.
 
 ### Public GitHub 저장소의 시크릿 관리
 
@@ -54,10 +69,13 @@ docker compose ps         # healthy 확인
 GitHub public 저장소는 secret scanning이 자동 적용되며, 사용자 push protection도 공개 저장소로
 시크릿을 푸시하는 실수를 막아준다. 차단이 발생하면 우회하지 말고 값을 제거한 뒤 다시 커밋한다.
 
-## EC2 배포 (1단계: DB만)
+## EC2 신규 구축 (DB만, 필요한 경우)
 
 API는 아직 로컬에서 실행하고, **DB만 EC2로 옮기는** 단계다. EC2에는 소스코드가 필요 없고
 `docker-compose.yml` 과 `.env` 두 파일만 있으면 된다.
+
+> 이미 EC2에서 PostgreSQL이 정상 구동 중이면 아래 1~3단계를 다시 수행하지 말고
+> "로컬 앱 → EC2 DB 연결" 단계부터 확인한다.
 
 ### 1. 인스턴스 / 보안 그룹
 
@@ -106,7 +124,7 @@ scp -i key.pem .env               ec2-user@<EIP>:~/studio/   # 비밀번호 포�
 ssh -i key.pem ec2-user@<EIP>
 cd ~/studio
 chmod 600 .env
-docker compose up -d && docker compose ps
+docker compose up -d && docker compose ps   # 신규 구축 또는 계획된 재기동에만 사용
 ```
 
 ### 4. 로컬 앱 → EC2 DB 연결 (SSH 터널)
@@ -162,7 +180,7 @@ curl http://localhost:8080/api/portfolio
 ## 실행
 
 ```bash
-docker compose up -d                 # 로컬 Postgres 기동
+docker compose up -d                 # 신규 로컬 Postgres 기동 또는 계획된 재기동
 ./gradlew test                       # 테스트 프로파일(H2). DB_PASSWORD 불필요
 ./gradlew build                      # 테스트 포함 전체 빌드
 ```
