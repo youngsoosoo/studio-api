@@ -16,7 +16,7 @@ studio 포트폴리오 백엔드 API. **Spring Boot 3.5 + Java 17 + Gradle + JPA
 (로컬·EC2 동일 파일 사용).
 
 ```bash
-cp .env.example .env      # 값 채우기 (특히 DB_PASSWORD와 ADMIN_KEY)
+# 프로젝트 루트에 .env 파일을 만들고 아래 표의 값을 입력한다.
 docker compose up -d
 docker compose ps         # healthy 확인
 ```
@@ -41,8 +41,8 @@ docker compose ps         # healthy 확인
 
 ### Public GitHub 저장소의 시크릿 관리
 
-- `.env.example`에는 변수명과 비밀이 아닌 예제값만 커밋한다.
-- 실제 비밀번호가 들어 있는 `.env`, `.env.production` 등은 `.gitignore`로 커밋을 차단한다.
+- `.env`와 `.env.production` 등 모든 환경 파일은 저장소에 커밋하지 않는다.
+- 실제 비밀번호가 들어 있는 환경 파일은 `.gitignore`로 커밋을 차단한다.
 - 로컬에서는 `.env`를 프로젝트 루트에 두면 Docker Compose와 Spring Boot가 같은 파일을 읽는다.
 - GitHub Actions에서는 저장소 또는 배포 Environment의 `Secrets and variables > Actions`에
   `DB_PASSWORD`, `ADMIN_KEY` 등을 등록하고 `${{ secrets.DB_PASSWORD }}` 형태로 주입한다.
@@ -167,7 +167,7 @@ docker compose up -d                 # 로컬 Postgres 기동
 ./gradlew build                      # 테스트 포함 전체 빌드
 ```
 
-`.env.example`을 복사해 실제 값을 채웠다면 별도의 PowerShell 환경 변수 설정 없이 기동할 수 있다:
+프로젝트 루트의 `.env`에 실제 값을 채웠다면 별도의 PowerShell 환경 변수 설정 없이 기동할 수 있다:
 
 ```powershell
 .\gradlew.bat bootRun                # 준비된 DB 스키마를 검증한 뒤 :8080 기동
