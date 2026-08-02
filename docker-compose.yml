@@ -1,13 +1,10 @@
-# EC2 Linux에서 studio-api만 빌드하고 실행한다.
+# EC2 Linux에서 CI가 게시한 studio-api 이미지만 받아 실행한다.
 # PostgreSQL 서비스나 볼륨은 선언하지 않으므로 기존 DB 컨테이너를 건드리지 않는다.
 # network_mode: host 덕분에 컨테이너의 localhost가 EC2 호스트와 동일하며,
 # 호스트의 127.0.0.1에 게시된 기존 PostgreSQL 포트로 연결할 수 있다.
 services:
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: studio-api:latest
+    image: ${DOCKERHUB_IMAGE:?DOCKERHUB_IMAGE is required}:latest
     container_name: studio-api
     restart: unless-stopped
     network_mode: host

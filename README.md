@@ -32,10 +32,20 @@ studio 포트폴리오 백엔드 API. **Spring Boot 3.5 + Java 17 + Gradle + JPA
 - GitHub Actions에서는 저장소 또는 배포 Environment의 Secrets에 값을 등록한다.
 - 시크릿이 Git 이력이나 공개 화면에 노출됐다면 파일 삭제로 끝내지 말고 즉시 폐기·재발급한다.
 
-## EC2 API 서버 배포
+## main CI/CD와 EC2 배포
 
-`Dockerfile`은 Spring Boot 실행 이미지를 만들고, `docker-compose.yml`은 `api` 컨테이너와 업로드 전용
-볼륨만 관리한다. Compose 파일에는 PostgreSQL 서비스나 PostgreSQL 볼륨이 없다.
+운영 이미지와 EC2 배포 기준은 `main` 브랜치뿐이다. `.github/workflows/main-ci-cd.yml`은 다음과 같이 동작한다.
+
+1. `main` 대상 Pull Request에서 Java 17 Gradle 빌드와 H2 기반 테스트를 수행한다.
+2. `main`에 push된 커밋만 Docker 이미지로 만들고 Docker Hub의 `latest`와 Git SHA 태그로 게시한다.
+3. EC2의 systemd 타이머가 Docker Hub의 `latest`를 확인하고 변경된 경우 `api` 컨테이너만 재배포한다.
+
+GitHub Actions 권한은 `contents: read`뿐이며 Git 브랜치에 커밋하거나 push하지 않는다. EC2 저장소는
+`main` 브랜치로만 체크아웃하며 배포 스크립트도 다른 브랜치에서는 실행을 거부한다. CD 과정에서는
+EC2 저장소를 `git pull`하지 않고 Docker Hub 이미지만 갱신한다.
+
+`Dockerfile`은 CI에서 Spring Boot 실행 이미지를 만들고, `docker-compose.yml`은 EC2에서 `api` 컨테이너와
+업로드 전용 볼륨만 관리한다. Compose 파일에는 PostgreSQL 서비스나 PostgreSQL 볼륨이 없다.
 
 ### 연결 전제
 
@@ -50,7 +60,35 @@ jdbc:postgresql://localhost:5432/<database>
 PostgreSQL이 다른 호스트 포트를 사용한다면 `DB_URL`의 포트만 맞춘다. 기존 PostgreSQL 컨테이너의
 네트워크, 환경 변수 또는 볼륨은 변경하지 않는다.
 
-### 1. EC2 환경 변수 준비
+### 1. Docker Hub와 GitHub Actions 설정
+
+Docker Hub에 `studio-api` 저장소를 만든 뒤 GitHub 저장소의 **Settings → Secrets and variables → Actions**에
+다음 값을 등록한다.
+
+| 종류 | 이름 | 예시/설명 |
+|------|------|-----------|
+| Variable | `DOCKERHUB_IMAGE` | `youngsoosoo/studio-api` 형식의 전체 이미지 저장소 경로 |
+| Variable | `DOCKERHUB_USERNAME` | Docker Hub 로그인 사용자명 |
+| Secret | `DOCKERHUB_TOKEN` | 해당 저장소에 push 가능한 Docker Hub access token |
+
+- Docker Hub 저장소가 비공개라면 EC2에는 pull 전용 access token으로 한 번 로그인한다. 공개 저장소도
+  pull 제한을 줄이기 위해 로그인을 권장한다.
+
+```bash
+echo "$DOCKERHUB_PULL_TOKEN" | docker login -u <dockerhub-username> --password-stdin
+```
+
+GitHub Actions의 `DOCKERHUB_TOKEN`은 push 가능한 토큰을 사용하고, EC2에는 별도의 pull 전용 토큰을 사용한다.
+
+### 2. EC2 최초 설정
+
+systemd 단위 파일은 저장소가 EC2 사용자의 `~/studio-api`에 있다고 가정한다.
+
+```bash
+cd ~
+git clone --branch main --single-branch https://github.com/youngsoosoo/studio-api.git
+cd studio-api
+```
 
 저장소 루트에 `.env`를 직접 만든다. 실제 값은 저장소에 커밋하지 않는다.
 
@@ -58,6 +96,7 @@ PostgreSQL이 다른 호스트 포트를 사용한다면 `DB_URL`의 포트만 �
 DB_URL=jdbc:postgresql://localhost:5432/<database>
 DB_USER=<existing-user>
 DB_PASSWORD=<existing-password>
+DOCKERHUB_IMAGE=<dockerhub-username>/studio-api
 SERVER_PORT=8080
 APP_PUBLIC_BASE_URL=https://<api-domain>
 ADMIN_KEY=<strong-random-key>
@@ -65,30 +104,47 @@ ADMIN_KEY=<strong-random-key>
 
 `UPLOAD_DIR`은 Compose가 `/app/uploads`로 고정하며 `studio-api-uploads` named volume에 보존한다.
 
-### 2. 빌드 및 실행
+설정 후 pull 방식 배포 에이전트를 등록한다.
 
 ```bash
 chmod 600 .env
-docker compose build api
-docker compose up -d api
-docker compose ps
-docker compose logs --tail=100 api
+chmod +x deploy/pull-latest.sh
+mkdir -p ~/.config/systemd/user
+cp deploy/systemd/studio-api-cd.* ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now studio-api-cd.timer
+sudo loginctl enable-linger "$USER"
+./deploy/pull-latest.sh
 ```
 
-위 명령은 `api` 서비스만 대상으로 한다. 기존 PostgreSQL 컨테이너에는 Compose 명령을 실행하지 않는다.
+타이머는 1분 간격으로 Docker Hub의 `latest`를 pull한다. 이미지가 바뀌지 않았다면 Compose가 기존
+컨테이너를 유지하고, digest가 바뀌었다면 `api`만 새 이미지로 재생성한다. 기존 PostgreSQL 컨테이너에는
+어떤 Compose 명령도 실행하지 않는다.
 
-### 3. 새 버전 배포
+### 3. 배포와 상태 확인
+
+새 버전은 `main`에 merge 또는 push한다. 빌드와 테스트가 성공해 Docker Hub의 `latest`가 갱신되면 EC2가
+다음 타이머 실행에서 자동으로 가져간다.
+
+일반 애플리케이션 배포에서는 EC2에서 Git을 갱신하지 않는다. `docker-compose.yml`이나 `deploy/` 자체가
+바뀐 경우에만 별도 점검 후 EC2의 `main`을 `git pull --ff-only origin main`으로 수동 갱신한다.
 
 ```bash
-git pull
-docker compose build --pull api
-docker compose up -d api
-docker compose logs --tail=100 api
+systemctl --user status studio-api-cd.timer
+journalctl --user -u studio-api-cd.service -n 100
+docker compose --env-file .env ps api
+docker compose --env-file .env logs --tail=100 api
 ```
 
-### 4. 확인 및 운영 주의
+### 4. 롤백과 운영 주의
+
+롤백할 때는 Docker Hub에 남아 있는 이전 Git SHA 태그를 `latest`로 다시 게시한다. EC2는 다음 타이머
+실행에서 해당 이미지를 자동으로 적용한다.
 
 ```bash
+docker pull <dockerhub-image>:<previous-git-sha>
+docker tag <dockerhub-image>:<previous-git-sha> <dockerhub-image>:latest
+docker push <dockerhub-image>:latest
 curl http://localhost:8080/api/portfolio
 ```
 
@@ -108,6 +164,7 @@ curl http://localhost:8080/api/portfolio
 | `DB_URL`              | `jdbc:postgresql://localhost:5432/portfolio`      | JDBC URL                                      |
 | `DB_USER`             | `portfolio_user`                                  |                                               |
 | `DB_PASSWORD`         | **_(필수 · 기본값 없음)_**                        | 미설정 시 **기동 실패**. 설정 파일에 비밀번호를 두지 않는다 |
+| `DOCKERHUB_IMAGE`     | **_(EC2 Compose 실행 시 필수)_**                  | `<dockerhub-username>/studio-api` 형식         |
 | `SERVER_PORT`         | `8080`                                            |                                               |
 | `APP_PUBLIC_BASE_URL` | `http://localhost:8080`                           | 업로드 이미지 URL 프리픽스                    |
 | `ADMIN_KEY`           | _(빈 값)_                                         | 비어 있으면 이미지 업로드 API 비활성(fail closed) |
