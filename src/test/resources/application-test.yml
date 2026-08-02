@@ -1,12 +1,24 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:studio;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:studio;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
     username: sa
-    password:
+    # 빈 문자열을 명시한다. 값을 비워두면 상위 application.yml 의
+    # ${DB_PASSWORD} 로 폴백해 테스트가 기동 실패할 수 있다.
+    password: ""
     driver-class-name: org.h2.Driver
+    hikari:
+      maximum-pool-size: 16
   jpa:
+    # Tests have no external DB, so Hibernate builds an isolated H2 schema.
     hibernate:
       ddl-auto: create-drop
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+
+app:
+  public-base-url: http://localhost:8080
+  admin:
+    key: test-admin-key
+  upload:
+    dir: ${java.io.tmpdir}/studio-test-uploads

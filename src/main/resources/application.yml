@@ -1,18 +1,41 @@
 spring:
   application:
     name: studio-api
+  config:
+    # 로컬에서는 Git에서 제외된 .env 파일을 읽는다. 운영 환경 변수는 이 값보다 우선한다.
+    import: optional:file:.env[.properties]
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/studio}
-    username: ${DB_USERNAME:studio}
+    # URL/사용자명은 로컬 Docker 기준 기본값을 두고 환경 변수로 오버라이드한다.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/portfolio}
+    username: ${DB_USER:portfolio_user}
+    # 비밀번호 기본값은 두지 않는다. 빈 값이면 DataSourceSecretCheck가 기동을 중단한다.
     password: ${DB_PASSWORD:}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      # The aggregate endpoint loads ~11 sections in parallel; give the pool
+      # headroom so those transactions don't queue for a connection.
+      maximum-pool-size: 16
   jpa:
     hibernate:
+      # Hibernate validates the existing schema but never creates or modifies it.
       ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_batch_fetch_size: 32
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
 
 server:
   port: ${SERVER_PORT:8080}
+
+app:
+  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
+  admin:
+    # Blank disables the admin API entirely (fail closed).
+    key: ${ADMIN_KEY:}
+  upload:
+    dir: ${UPLOAD_DIR:./uploads}

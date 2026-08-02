@@ -39,12 +39,14 @@ out/
 ### Local environment / secrets (never commit) ###
 .env
 .env.*
-!.env.example
 application-local.yml
 application-local.yaml
 application-local.properties
 src/main/resources/application-local.*
 src/test/resources/application-local.*
+
+### Runtime uploads ###
+/uploads/
 
 ### OS ###
 .DS_Store
