@@ -28,7 +28,7 @@ studio 포트폴리오 백엔드 API. **Spring Boot 3.5 + Java 17 + Gradle + JPA
 ### 시크릿 관리
 
 - `.env`와 `.env.production` 등 모든 환경 파일은 저장소에 커밋하지 않는다.
-- EC2의 프로젝트 디렉터리에 `.env`를 직접 만들고 `chmod 600 .env`로 권한을 제한한다.
+- Actions가 EC2에 전송하는 `.env`는 `chmod 600`으로 권한을 제한한다.
 - GitHub Actions에서는 저장소 또는 배포 Environment의 Secrets에 값을 등록한다.
 - 시크릿이 Git 이력이나 공개 화면에 노출됐다면 파일 삭제로 끝내지 말고 즉시 폐기·재발급한다.
 
@@ -37,12 +37,16 @@ studio 포트폴리오 백엔드 API. **Spring Boot 3.5 + Java 17 + Gradle + JPA
 운영 이미지와 EC2 배포 기준은 `main` 브랜치뿐이다. `.github/workflows/main-ci-cd.yml`은 다음과 같이 동작한다.
 
 1. `main` 대상 Pull Request에서 Java 17 Gradle 빌드와 H2 기반 테스트를 수행한다.
-2. `main`에 push된 커밋만 Docker 이미지로 만들고 Docker Hub의 `latest`와 Git SHA 태그로 게시한다.
-3. EC2의 systemd 타이머가 Docker Hub의 `latest`를 확인하고 변경된 경우 `api` 컨테이너만 재배포한다.
+2. `main` push마다 `main-<실행번호>-<짧은 SHA>` 버전을 생성해 Docker Hub에 게시한다.
+3. 같은 Actions YAML이 SSH로 EC2에 접속해 Compose 파일, 런타임 환경 파일과 이미지 버전을 전송한다.
+4. EC2에서 지정된 버전의 이미지를 pull하고 `api` 컨테이너만 재배포한다.
 
-GitHub Actions 권한은 `contents: read`뿐이며 Git 브랜치에 커밋하거나 push하지 않는다. EC2 저장소는
-`main` 브랜치로만 체크아웃하며 배포 스크립트도 다른 브랜치에서는 실행을 거부한다. CD 과정에서는
-EC2 저장소를 `git pull`하지 않고 Docker Hub 이미지만 갱신한다.
+`latest` 태그는 만들거나 사용하지 않는다. 예를 들어 Actions 실행번호가 27이고 커밋 SHA가 `a1b2c3d...`이면
+배포 버전은 `main-27-a1b2c3d`다. 전체 Git SHA 태그도 롤백 추적용으로 함께 게시한다.
+
+GitHub Actions 권한은 `contents: read`뿐이며 Git 브랜치에 커밋하거나 push하지 않는다. EC2에는 저장소 clone,
+systemd 타이머 또는 별도 배포 스크립트가 필요 없다. 워크플로가 `~/studio-api`를 만들고 필요한 파일을
+전송한다.
 
 `Dockerfile`은 CI에서 Spring Boot 실행 이미지를 만들고, `docker-compose.yml`은 EC2에서 `api` 컨테이너와
 업로드 전용 볼륨만 관리한다. Compose 파일에는 PostgreSQL 서비스나 PostgreSQL 볼륨이 없다.
@@ -60,7 +64,17 @@ jdbc:postgresql://localhost:5432/<database>
 PostgreSQL이 다른 호스트 포트를 사용한다면 `DB_URL`의 포트만 맞춘다. 기존 PostgreSQL 컨테이너의
 네트워크, 환경 변수 또는 볼륨은 변경하지 않는다.
 
-### 1. Docker Hub와 GitHub Actions 설정
+### 1. EC2 사전 조건
+
+EC2에는 다음 항목만 준비한다. 기존 PostgreSQL 컨테이너와 데이터는 변경하지 않는다.
+
+- Docker Engine과 Docker Compose 플러그인
+- 배포 사용자가 비밀번호 없이 `docker` 명령을 실행할 수 있는 권한
+- GitHub Actions에서 사용할 SSH 키의 공개 키가 `~/.ssh/authorized_keys`에 등록된 상태
+- EC2 보안 그룹의 SSH 포트가 GitHub-hosted runner에서 접근 가능한 상태
+- 기존 PostgreSQL이 EC2 호스트의 `127.0.0.1:<port>`로 게시된 상태
+
+### 2. Docker Hub와 GitHub Actions 설정
 
 Docker Hub에 `studio-api` 저장소를 만든 뒤 GitHub 저장소의 **Settings → Secrets and variables → Actions**에
 다음 값을 등록한다.
@@ -69,84 +83,57 @@ Docker Hub에 `studio-api` 저장소를 만든 뒤 GitHub 저장소의 **Setting
 |------|------|-----------|
 | Variable | `DOCKERHUB_IMAGE` | `youngsoosoo/studio-api` 형식의 전체 이미지 저장소 경로 |
 | Variable | `DOCKERHUB_USERNAME` | Docker Hub 로그인 사용자명 |
+| Variable | `EC2_HOST` | EC2의 고정 Public IP 또는 도메인 |
+| Variable | `EC2_USER` | Amazon Linux는 보통 `ec2-user`, Ubuntu는 `ubuntu` |
 | Secret | `DOCKERHUB_TOKEN` | 해당 저장소에 push 가능한 Docker Hub access token |
+| Secret | `DOCKERHUB_PULL_TOKEN` | EC2가 이미지를 받을 때 사용할 pull 전용 access token |
+| Secret | `EC2_SSH_PRIVATE_KEY` | EC2 접속용 SSH 개인 키 전문 |
+| Secret | `EC2_KNOWN_HOSTS` | 검증한 EC2 SSH host key 한 줄 |
+| Secret | `EC2_APP_ENV` | 아래 형식의 운영 애플리케이션 환경 변수 전문 |
 
-- Docker Hub 저장소가 비공개라면 EC2에는 pull 전용 access token으로 한 번 로그인한다. 공개 저장소도
-  pull 제한을 줄이기 위해 로그인을 권장한다.
-
-```bash
-echo "$DOCKERHUB_PULL_TOKEN" | docker login -u <dockerhub-username> --password-stdin
-```
-
-GitHub Actions의 `DOCKERHUB_TOKEN`은 push 가능한 토큰을 사용하고, EC2에는 별도의 pull 전용 토큰을 사용한다.
-
-### 2. EC2 최초 설정
-
-systemd 단위 파일은 저장소가 EC2 사용자의 `~/studio-api`에 있다고 가정한다.
-
-```bash
-cd ~
-git clone --branch main --single-branch https://github.com/youngsoosoo/studio-api.git
-cd studio-api
-```
-
-저장소 루트에 `.env`를 직접 만든다. 실제 값은 저장소에 커밋하지 않는다.
+`EC2_APP_ENV` Secret 값은 다음과 같이 등록한다. 이미지 이름과 버전은 워크플로가 별도로 관리하므로
+이 Secret에 넣지 않는다.
 
 ```dotenv
 DB_URL=jdbc:postgresql://localhost:5432/<database>
 DB_USER=<existing-user>
 DB_PASSWORD=<existing-password>
-DOCKERHUB_IMAGE=<dockerhub-username>/studio-api
 SERVER_PORT=8080
 APP_PUBLIC_BASE_URL=https://<api-domain>
 ADMIN_KEY=<strong-random-key>
 ```
 
-`UPLOAD_DIR`은 Compose가 `/app/uploads`로 고정하며 `studio-api-uploads` named volume에 보존한다.
-
-설정 후 pull 방식 배포 에이전트를 등록한다.
+SSH host key는 신뢰할 수 있는 경로로 EC2 fingerprint를 먼저 확인한 뒤 다음과 같이 얻어
+`EC2_KNOWN_HOSTS`에 등록한다.
 
 ```bash
-chmod 600 .env
-chmod +x deploy/pull-latest.sh
-mkdir -p ~/.config/systemd/user
-cp deploy/systemd/studio-api-cd.* ~/.config/systemd/user/
-systemctl --user daemon-reload
-systemctl --user enable --now studio-api-cd.timer
-sudo loginctl enable-linger "$USER"
-./deploy/pull-latest.sh
+ssh-keyscan -H <ec2-host>
 ```
 
-타이머는 1분 간격으로 Docker Hub의 `latest`를 pull한다. 이미지가 바뀌지 않았다면 Compose가 기존
-컨테이너를 유지하고, digest가 바뀌었다면 `api`만 새 이미지로 재생성한다. 기존 PostgreSQL 컨테이너에는
-어떤 Compose 명령도 실행하지 않는다.
+GitHub의 `production` Environment를 만들고 배포 브랜치를 `main`으로 제한하는 것을 권장한다. 위 Secret을
+Environment Secret으로 등록하면 승인 규칙과 함께 운영 배포에만 노출할 수 있다.
 
 ### 3. 배포와 상태 확인
 
-새 버전은 `main`에 merge 또는 push한다. 빌드와 테스트가 성공해 Docker Hub의 `latest`가 갱신되면 EC2가
-다음 타이머 실행에서 자동으로 가져간다.
+새 버전은 `main`에 merge 또는 push한다. 빌드와 테스트가 성공하면 버전 이미지 게시와 EC2 SSH 배포가
+같은 워크플로에서 이어진다. EC2에는 다음 파일이 생성된다.
 
-일반 애플리케이션 배포에서는 EC2에서 Git을 갱신하지 않는다. `docker-compose.yml`이나 `deploy/` 자체가
-바뀐 경우에만 별도 점검 후 EC2의 `main`을 `git pull --ff-only origin main`으로 수동 갱신한다.
+- `~/studio-api/docker-compose.yml`
+- `~/studio-api/.env` — `EC2_APP_ENV`에서 생성, 권한 `600`
+- `~/studio-api/image.env` — `DOCKERHUB_IMAGE`와 현재 `IMAGE_VERSION`
 
 ```bash
-systemctl --user status studio-api-cd.timer
-journalctl --user -u studio-api-cd.service -n 100
-docker compose --env-file .env ps api
-docker compose --env-file .env logs --tail=100 api
+cd ~/studio-api
+cat image.env
+docker compose --env-file image.env ps api
+docker compose --env-file image.env logs --tail=100 api
 ```
 
 ### 4. 롤백과 운영 주의
 
-롤백할 때는 Docker Hub에 남아 있는 이전 Git SHA 태그를 `latest`로 다시 게시한다. EC2는 다음 타이머
-실행에서 해당 이미지를 자동으로 적용한다.
-
-```bash
-docker pull <dockerhub-image>:<previous-git-sha>
-docker tag <dockerhub-image>:<previous-git-sha> <dockerhub-image>:latest
-docker push <dockerhub-image>:latest
-curl http://localhost:8080/api/portfolio
-```
+GitHub Actions에서 **Run workflow**를 선택하고 `main` 브랜치와 Docker Hub에 존재하는 이전
+`image_version`을 입력하면 이미지를 다시 빌드하지 않고 해당 버전으로 EC2를 재배포한다. `latest`로
+태그를 옮기는 작업은 하지 않는다.
 
 - `docker compose stop api`는 API 컨테이너만 중단한다.
 - `docker compose down`도 이 파일에 정의된 API 리소스만 대상으로 하지만, 업로드 볼륨 보호를 위해
@@ -164,7 +151,8 @@ curl http://localhost:8080/api/portfolio
 | `DB_URL`              | `jdbc:postgresql://localhost:5432/portfolio`      | JDBC URL                                      |
 | `DB_USER`             | `portfolio_user`                                  |                                               |
 | `DB_PASSWORD`         | **_(필수 · 기본값 없음)_**                        | 미설정 시 **기동 실패**. 설정 파일에 비밀번호를 두지 않는다 |
-| `DOCKERHUB_IMAGE`     | **_(EC2 Compose 실행 시 필수)_**                  | `<dockerhub-username>/studio-api` 형식         |
+| `DOCKERHUB_IMAGE`     | **_(Compose 배포 시 필수)_**                      | Actions가 `image.env`에 기록                  |
+| `IMAGE_VERSION`       | **_(Compose 배포 시 필수)_**                      | `main-<실행번호>-<짧은 SHA>` 형식             |
 | `SERVER_PORT`         | `8080`                                            |                                               |
 | `APP_PUBLIC_BASE_URL` | `http://localhost:8080`                           | 업로드 이미지 URL 프리픽스                    |
 | `ADMIN_KEY`           | _(빈 값)_                                         | 비어 있으면 이미지 업로드 API 비활성(fail closed) |

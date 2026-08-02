@@ -1,7 +1,0 @@
-[Unit]
-Description=studio-api Docker Hub 최신 이미지 배포
-
-[Service]
-Type=oneshot
-WorkingDirectory=%h/studio-api
-ExecStart=%h/studio-api/deploy/pull-latest.sh
