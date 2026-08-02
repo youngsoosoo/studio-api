@@ -1,0 +1,163 @@
+package com.studio.api.portfolio;
+
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.studio.api.common.NotFoundException;
+import com.studio.api.portfolio.controller.PortfolioController;
+import com.studio.api.portfolio.dto.About;
+import com.studio.api.portfolio.dto.PortfolioResponse;
+import com.studio.api.portfolio.dto.Profile;
+import com.studio.api.portfolio.dto.ProjectChallenge;
+import com.studio.api.portfolio.dto.ProjectDetailResponse;
+import com.studio.api.portfolio.dto.ProjectMetric;
+import com.studio.api.portfolio.dto.ProjectProblemCase;
+import com.studio.api.portfolio.dto.ProjectSummary;
+import com.studio.api.portfolio.service.PortfolioReader;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+/**
+ * Controller slice test using synthetic responses. It verifies the public JSON
+ * contract without connecting to a database or storing personal portfolio data.
+ */
+@WebMvcTest(PortfolioController.class)
+class PortfolioControllerTest {
+
+    private static final Profile PROFILE = new Profile(
+            "Test User",
+            "Backend Developer",
+            "Synthetic test profile",
+            "Test City",
+            null,
+            null,
+            List.of());
+
+    private static final About ABOUT = new About(
+            "Test introduction",
+            List.of("Synthetic paragraph"),
+            List.of("Synthetic highlight"));
+
+    private static final ProjectSummary PROJECT = new ProjectSummary(
+            "sample-project",
+            "Sample Project",
+            "Synthetic project used only by tests",
+            "Backend",
+            List.of("Java", "Spring Boot"),
+            "2026",
+            null,
+            null,
+            null,
+            true);
+
+    private static final ProjectDetailResponse PROJECT_DETAIL = new ProjectDetailResponse(
+            PROJECT.id(),
+            PROJECT,
+            List.of("Synthetic overview"),
+            "Synthetic problem",
+            List.of(),
+            List.of("Synthetic approach"),
+            List.of(),
+            List.of(),
+            List.of("Synthetic outcome"),
+            List.of(),
+            PROJECT.tags(),
+            null,
+            List.of(),
+            List.of(new ProjectProblemCase(
+                    "Synthetic problem case",
+                    "Synthetic problem definition",
+                    List.of("Synthetic solution step"),
+                    List.of(new ProjectChallenge(
+                            "Synthetic technical challenge",
+                            "Synthetic technical result")),
+                    List.of("Synthetic case outcome"),
+                    List.of(new ProjectMetric("Synthetic metric", "42%")))));
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private PortfolioReader portfolioReader;
+
+    @BeforeEach
+    void setUpReader() {
+        when(portfolioReader.getPortfolio()).thenReturn(new PortfolioResponse(
+                PROFILE,
+                ABOUT,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(PROJECT),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of()));
+        when(portfolioReader.getProjects()).thenReturn(List.of(PROJECT));
+        when(portfolioReader.getProjectDetail(PROJECT.id())).thenReturn(PROJECT_DETAIL);
+        when(portfolioReader.getProjectDetail("missing"))
+                .thenThrow(new NotFoundException("Project detail not found: missing"));
+    }
+
+    @Test
+    void returnsAggregatedPortfolio() throws Exception {
+        mockMvc.perform(get("/api/portfolio"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("success"))
+            .andExpect(jsonPath("$.error").doesNotExist())
+            .andExpect(jsonPath("$.data.profile.name").value("Test User"))
+            .andExpect(jsonPath("$.data.projects.length()").value(1))
+            .andExpect(jsonPath("$.data.projects[0].id").value("sample-project"))
+            .andExpect(jsonPath("$.data.techStack").isArray())
+            .andExpect(jsonPath("$.data.achievements").isArray())
+            .andExpect(jsonPath("$.data.education").isArray())
+            .andExpect(jsonPath("$.data.awards").isArray())
+            .andExpect(jsonPath("$.data.certifications").isArray())
+            .andExpect(jsonPath("$.data.timeline").isArray());
+    }
+
+    @Test
+    void returnsProjectsSection() throws Exception {
+        mockMvc.perform(get("/api/portfolio/projects"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("success"))
+            .andExpect(jsonPath("$.data.length()").value(1))
+            .andExpect(jsonPath("$.data[0].id").value("sample-project"))
+            .andExpect(jsonPath("$.data[0].tags").isArray());
+    }
+
+    @Test
+    void returnsProjectDetail() throws Exception {
+        mockMvc.perform(get("/api/portfolio/projects/sample-project"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("success"))
+            .andExpect(jsonPath("$.data.id").value("sample-project"))
+            .andExpect(jsonPath("$.data.project.title").value("Sample Project"))
+            .andExpect(jsonPath("$.data.overview.length()").value(1))
+            .andExpect(jsonPath("$.data.approach.length()").value(1))
+            .andExpect(jsonPath("$.data.stack.length()").value(2))
+            .andExpect(jsonPath("$.data.images").isArray())
+            .andExpect(jsonPath("$.data.problemCases.length()").value(1))
+            .andExpect(jsonPath("$.data.problemCases[0].title").value("Synthetic problem case"))
+            .andExpect(jsonPath("$.data.problemCases[0].approach.length()").value(1))
+            .andExpect(jsonPath("$.data.problemCases[0].challenges.length()").value(1))
+            .andExpect(jsonPath("$.data.problemCases[0].metrics[0].value").value("42%"));
+    }
+
+    @Test
+    void returnsNotFoundForUnknownProjectDetail() throws Exception {
+        mockMvc.perform(get("/api/portfolio/projects/missing"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.status").value("error"))
+            .andExpect(jsonPath("$.error.code").value("NOT_FOUND"))
+            .andExpect(jsonPath("$.data").doesNotExist());
+    }
+}
