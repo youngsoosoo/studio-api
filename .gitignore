@@ -46,6 +46,9 @@ application-local.properties
 src/main/resources/application-local.*
 src/test/resources/application-local.*
 
+### Runtime uploads ###
+/uploads/
+
 ### OS ###
 .DS_Store
 Thumbs.db
