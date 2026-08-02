@@ -36,10 +36,10 @@ studio 포트폴리오 백엔드 API. **Spring Boot 3.5 + Java 17 + Gradle + JPA
 
 운영 이미지와 EC2 배포 기준은 `main` 브랜치뿐이다. `.github/workflows/main-ci-cd.yml`은 다음과 같이 동작한다.
 
-1. `main` 대상 Pull Request에서 Java 17 Gradle 빌드와 H2 기반 테스트를 수행한다.
-2. `main` push마다 `main-<실행번호>-<짧은 SHA>` 버전을 생성해 Docker Hub에 게시한다.
-3. 같은 Actions YAML이 SSH로 EC2에 접속해 Compose 파일, 런타임 환경 파일과 이미지 버전을 전송한다.
-4. EC2에서 지정된 버전의 이미지를 pull하고 `api`와 Nginx `proxy` 컨테이너를 재배포한다.
+1. CI는 `main` 대상 Pull Request에서 Java 17 Gradle 빌드와 H2 기반 테스트만 수행한다.
+2. `main` push에서는 CI가 `main-<실행번호>-<짧은 SHA>` 버전을 생성하고 Docker Hub 게시까지 수행한다.
+3. CI가 성공한 경우에만 CD가 `production` Environment를 열고 SSH로 EC2에 배포 파일을 전송한다.
+4. CD는 EC2에서 지정된 버전의 이미지를 pull하고 `api`와 Nginx `proxy` 컨테이너를 재배포한다.
 
 `latest` 태그는 만들거나 사용하지 않는다. 예를 들어 Actions 실행번호가 27이고 커밋 SHA가 `a1b2c3d...`이면
 배포 버전은 `main-27-a1b2c3d`다. 전체 Git SHA 태그도 롤백 추적용으로 함께 게시한다.
@@ -79,7 +79,7 @@ EC2에는 다음 항목만 준비한다. 기존 PostgreSQL 컨테이너와 데�
 ### 2. Docker Hub와 GitHub Actions 설정
 
 Docker Hub에 `studio-api` 저장소를 만든 뒤 GitHub 저장소의 **Settings → Secrets and variables → Actions**에
-다음 값을 등록한다.
+다음 Repository Variable과 CI용 Secret을 등록한다.
 
 | 종류 | 이름 | 예시/설명 |
 |------|------|-----------|
@@ -87,11 +87,16 @@ Docker Hub에 `studio-api` 저장소를 만든 뒤 GitHub 저장소의 **Setting
 | Variable | `DOCKERHUB_USERNAME` | Docker Hub 로그인 사용자명 |
 | Variable | `EC2_HOST` | EC2의 고정 Public IP 또는 도메인 |
 | Variable | `EC2_USER` | Amazon Linux는 보통 `ec2-user`, Ubuntu는 `ubuntu` |
-| Secret | `DOCKERHUB_TOKEN` | 해당 저장소에 push 가능한 Docker Hub access token |
-| Secret | `DOCKERHUB_PULL_TOKEN` | EC2가 이미지를 받을 때 사용할 pull 전용 access token |
-| Secret | `EC2_SSH_PRIVATE_KEY` | EC2 접속용 SSH 개인 키 전문 |
-| Secret | `EC2_KNOWN_HOSTS` | 검증한 EC2 SSH host key 한 줄 |
-| Secret | `EC2_APP_ENV` | 아래 형식의 운영 애플리케이션 환경 변수 전문 |
+| Repository Secret | `DOCKERHUB_TOKEN` | CI가 사용할 Docker Hub push access token |
+
+`production` Environment에는 CD에서만 사용하는 다음 Environment Secret을 등록한다.
+
+| 종류 | 이름 | 설명 |
+|------|------|------|
+| Environment Secret | `DOCKERHUB_PULL_TOKEN` | EC2가 이미지를 받을 때 사용할 pull 전용 access token |
+| Environment Secret | `EC2_SSH_PRIVATE_KEY` | EC2 접속용 SSH 개인 키 전문 |
+| Environment Secret | `EC2_KNOWN_HOSTS` | 검증한 EC2 SSH host key 한 줄 |
+| Environment Secret | `EC2_APP_ENV` | 아래 형식의 운영 애플리케이션 환경 변수 전문 |
 
 `EC2_APP_ENV` Secret 값은 다음과 같이 등록한다. 이미지 이름과 버전은 워크플로가 별도로 관리하므로
 이 Secret에 넣지 않는다.
@@ -115,8 +120,8 @@ SSH host key는 신뢰할 수 있는 경로로 EC2 fingerprint를 먼저 확인�
 ssh-keyscan -H <ec2-host>
 ```
 
-GitHub의 `production` Environment를 만들고 배포 브랜치를 `main`으로 제한하는 것을 권장한다. 위 Secret을
-Environment Secret으로 등록하면 승인 규칙과 함께 운영 배포에만 노출할 수 있다.
+GitHub의 `production` Environment를 만들고 배포 브랜치를 `main`으로 제한한다. CI의 Docker Hub push에는
+EC2 Secret이 노출되지 않으며, CD 작업이 시작될 때만 Environment 승인 규칙과 Secret이 적용된다.
 
 ### 3. 배포와 상태 확인
 
@@ -139,8 +144,8 @@ curl http://localhost/api/portfolio
 ### 4. 롤백과 운영 주의
 
 GitHub Actions에서 **Run workflow**를 선택하고 `main` 브랜치와 Docker Hub에 존재하는 이전
-`image_version`을 입력하면 이미지를 다시 빌드하지 않고 해당 버전으로 EC2를 재배포한다. `latest`로
-태그를 옮기는 작업은 하지 않는다.
+`image_version`을 입력하면 CI는 건너뛰고 CD만 실행해 해당 버전으로 EC2를 재배포한다. `latest`로 태그를
+옮기는 작업은 하지 않는다.
 
 - `docker compose stop api proxy`는 API와 Nginx 프록시만 중단한다.
 - `docker compose down`도 이 파일에 정의된 API 리소스만 대상으로 하지만, 업로드 볼륨 보호를 위해
