@@ -16,6 +16,8 @@ import com.studio.api.portfolio.dto.ProjectDetailResponseDto;
 import com.studio.api.portfolio.dto.ProjectMetricDto;
 import com.studio.api.portfolio.dto.ProjectProblemCaseDto;
 import com.studio.api.portfolio.dto.ProjectSummaryDto;
+import com.studio.api.portfolio.dto.ProjectVisualDto;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.studio.api.portfolio.service.PortfolioReader;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,15 +74,39 @@ class PortfolioControllerTest {
             PROJECT.tags(),
             null,
             List.of(),
-            List.of(new ProjectProblemCaseDto(
-                    "Synthetic problem case",
-                    "Synthetic problem definition",
-                    List.of("Synthetic solution step"),
-                    List.of(new ProjectChallengeDto(
-                            "Synthetic technical challenge",
-                            "Synthetic technical result")),
-                    List.of("Synthetic case outcome"),
-                    List.of(new ProjectMetricDto("Synthetic metric", "42%")))));
+            List.of(
+                    new ProjectProblemCaseDto(
+                            "problem",
+                            "Synthetic problem case",
+                            "Synthetic problem definition",
+                            List.of("Synthetic solution step"),
+                            List.of(new ProjectChallengeDto(
+                                    "Synthetic technical challenge",
+                                    "Synthetic technical result")),
+                            List.of("Synthetic case outcome"),
+                            List.of(new ProjectMetricDto("Synthetic metric", "42%")),
+                            List.of(),
+                            List.of(new ProjectVisualDto(
+                                    1L,
+                                    "flow",
+                                    "Synthetic flow",
+                                    null,
+                                    null,
+                                    null,
+                                    JsonNodeFactory.instance.objectNode()
+                                            .put("layout", "vertical"),
+                                    1,
+                                    0))),
+                    new ProjectProblemCaseDto(
+                            "feature",
+                            "Synthetic feature case",
+                            "Synthetic feature description",
+                            List.of("Synthetic feature step"),
+                            List.of(),
+                            List.of(),
+                            List.of(),
+                            List.of(),
+                            List.of())));
 
     @Autowired
     private MockMvc mockMvc;
@@ -150,11 +176,20 @@ class PortfolioControllerTest {
             .andExpect(jsonPath("$.data.approach.length()").value(1))
             .andExpect(jsonPath("$.data.stack.length()").value(2))
             .andExpect(jsonPath("$.data.images").isArray())
-            .andExpect(jsonPath("$.data.problemCases.length()").value(1))
+            .andExpect(jsonPath("$.data.problemCases.length()").value(2))
+            .andExpect(jsonPath("$.data.problemCases[0].kind").value("problem"))
             .andExpect(jsonPath("$.data.problemCases[0].title").value("Synthetic problem case"))
             .andExpect(jsonPath("$.data.problemCases[0].approach.length()").value(1))
             .andExpect(jsonPath("$.data.problemCases[0].challenges.length()").value(1))
-            .andExpect(jsonPath("$.data.problemCases[0].metrics[0].value").value("42%"));
+            .andExpect(jsonPath("$.data.problemCases[0].metrics[0].value").value("42%"))
+            .andExpect(jsonPath("$.data.problemCases[0].images").isArray())
+            .andExpect(jsonPath("$.data.problemCases[0].visuals.length()").value(1))
+            .andExpect(jsonPath("$.data.problemCases[0].visuals[0].type").value("flow"))
+            .andExpect(jsonPath("$.data.problemCases[0].visuals[0].payload.layout")
+                    .value("vertical"))
+            .andExpect(jsonPath("$.data.problemCases[1].kind").value("feature"))
+            .andExpect(jsonPath("$.data.problemCases[1].title").value("Synthetic feature case"))
+            .andExpect(jsonPath("$.data.problemCases[1].metrics.length()").value(0));
     }
 
     @Test
