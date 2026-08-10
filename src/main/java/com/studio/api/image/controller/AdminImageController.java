@@ -19,9 +19,11 @@ import org.springframework.web.multipart.MultipartFile;
  * admin UI yet, so CORS stays closed for this endpoint.
  *
  * <p>Optional {@code target} attaches the image in the same request:
- * {@code avatar} (profile photo), {@code thumbnail} (project card,
- * requires {@code project}), {@code project-image} (case-study figure,
- * requires {@code project}, accepts {@code alt}/{@code caption}).
+     * {@code avatar} (profile photo), {@code thumbnail} (project card,
+     * requires {@code project}), {@code project-image} (case-study figure,
+     * requires {@code project}, accepts {@code alt}/{@code caption}), or
+     * {@code problem-visual-image} (one case visual, requires project, problem
+     * kind/order, and visual order).
  */
 @RestController
 @RequestMapping("/api/admin/images")
@@ -36,8 +38,21 @@ public class AdminImageController {
             @RequestParam(required = false) String target,
             @RequestParam(required = false) String project,
             @RequestParam(required = false) String alt,
-            @RequestParam(required = false) String caption) {
-        ImageResponseDto response = imageService.upload(file, target, project, alt, caption);
+            @RequestParam(required = false) String caption,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String problemKind,
+            @RequestParam(required = false) Integer problemOrder,
+            @RequestParam(required = false) Integer visualOrder) {
+        ImageResponseDto response = imageService.upload(
+                file,
+                target,
+                project,
+                alt,
+                caption,
+                title,
+                problemKind,
+                problemOrder,
+                visualOrder);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseDto.ok(response));
     }
 }

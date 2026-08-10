@@ -239,6 +239,19 @@ curl -X POST -H "X-Admin-Key: $ADMIN_KEY" \
 # 프로젝트 상세 이미지(아키텍처/스크린샷)
 curl -X POST -H "X-Admin-Key: $ADMIN_KEY" \
   -F "file=@arch.png" "http://localhost:8080/api/admin/images?target=project-image&project=sample-project&alt=구조도"
+
+# 개별 문제 사례의 통합 Visual 이미지
+# problemOrder와 visualOrder는 0부터 시작한다. 동일 visualOrder는 교체된다.
+curl -X POST -H "X-Admin-Key: $ADMIN_KEY" \
+  -F "target=problem-visual-image" \
+  -F "project=sample-project" \
+  -F "problemKind=problem" \
+  -F "problemOrder=0" \
+  -F "visualOrder=1" \
+  -F "title=패킷 검증" \
+  -F "alt=DNS 패킷 검증 화면" \
+  -F "file=@packet.png" \
+  "http://localhost:8080/api/admin/images"
 ```
 
 허용 형식: `jpg`, `jpeg`, `png`, `webp` (확장자 + Content-Type + 파일 시그니처 검사), 최대 5MB.

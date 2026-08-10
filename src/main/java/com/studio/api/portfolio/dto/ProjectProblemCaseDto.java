@@ -7,11 +7,15 @@ import java.util.List;
  * solution steps, technical challenges, outcomes, and optional metrics.
  */
 public record ProjectProblemCaseDto(
+        /** {@code "problem"} or {@code "feature"} — which section renders this block. */
+        String kind,
         String title,
         String problemDefinition,
         List<String> approach,
         List<ProjectChallengeDto> challenges,
         List<String> outcomes,
-        List<ProjectMetricDto> metrics
+        List<ProjectMetricDto> metrics,
+        List<ProjectImageDto> images,
+        List<ProjectVisualDto> visuals
 ) {
 }

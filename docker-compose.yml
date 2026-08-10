@@ -12,6 +12,8 @@ services:
       - .env
     environment:
       UPLOAD_DIR: /app/uploads
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
     volumes:
       - studio-api-uploads:/app/uploads
     stop_grace_period: 30s

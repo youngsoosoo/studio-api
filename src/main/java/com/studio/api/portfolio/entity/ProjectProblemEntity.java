@@ -3,7 +3,9 @@ package com.studio.api.portfolio.entity;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -45,6 +47,11 @@ public class ProjectProblemEntity {
     @Comment("문제 사례 설명")
     private String description;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "kind", nullable = false, length = 20)
+    @Comment("사례 유형 (문제 해결 / 기능 구현)")
+    private ProjectProblemKind kind;
+
     @Column(name = "sort_order", nullable = false)
     @Comment("프로젝트 내 문제 사례 표시 순서")
     private int sortOrder;
@@ -77,13 +84,27 @@ public class ProjectProblemEntity {
     @OrderBy("sortOrder")
     private List<ProjectProblemMetricEntity> metrics;
 
+    @OneToMany(mappedBy = "problem", fetch = FetchType.LAZY)
+    @OrderBy("sortOrder")
+    private List<ProjectProblemImageEntity> images;
+
+    @OneToMany(mappedBy = "problem", fetch = FetchType.LAZY)
+    @OrderBy("sortOrder")
+    private List<ProjectProblemVisualEntity> visuals;
+
     protected ProjectProblemEntity() {
     }
 
-    public ProjectProblemEntity(ProjectDetailEntity detail, String title, String description, int sortOrder) {
+    public ProjectProblemEntity(
+            ProjectDetailEntity detail,
+            String title,
+            String description,
+            ProjectProblemKind kind,
+            int sortOrder) {
         this.detail = detail;
         this.title = title;
         this.description = description;
+        this.kind = kind;
         this.sortOrder = sortOrder;
     }
 
@@ -97,6 +118,11 @@ public class ProjectProblemEntity {
 
     public String getDescription() {
         return description;
+    }
+
+    /** Rows written before the {@code kind} column existed read as PROBLEM. */
+    public ProjectProblemKind getKind() {
+        return kind == null ? ProjectProblemKind.PROBLEM : kind;
     }
 
     public int getSortOrder() {
@@ -117,5 +143,13 @@ public class ProjectProblemEntity {
 
     public List<ProjectProblemMetricEntity> getMetrics() {
         return metrics;
+    }
+
+    public List<ProjectProblemImageEntity> getImages() {
+        return images;
+    }
+
+    public List<ProjectProblemVisualEntity> getVisuals() {
+        return visuals;
     }
 }

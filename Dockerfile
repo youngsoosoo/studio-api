@@ -11,6 +11,9 @@ RUN ./gradlew bootJar --no-daemon -x test
 
 FROM eclipse-temurin:17-jre-jammy
 
+ENV TZ=Asia/Seoul \
+    JAVA_TOOL_OPTIONS=-Duser.timezone=Asia/Seoul
+
 RUN groupadd --system studio \
     && useradd --system --gid studio --home-dir /app studio \
     && mkdir -p /app/uploads \

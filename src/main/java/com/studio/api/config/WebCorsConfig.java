@@ -14,6 +14,7 @@ public class WebCorsConfig implements WebMvcConfigurer {
 
     private static final String[] WEB_ORIGINS = {
             "https://studio-web-olive.vercel.app",
+            "https://studio-bu0uukfi6-studio-198a.vercel.app",
             "http://localhost:5173",
             "http://localhost:4173"
     };
