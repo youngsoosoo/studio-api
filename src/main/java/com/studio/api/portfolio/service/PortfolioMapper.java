@@ -15,6 +15,7 @@ import com.studio.api.portfolio.dto.ProjectMetricDto;
 import com.studio.api.portfolio.dto.ProjectProblemDto;
 import com.studio.api.portfolio.dto.ProjectProblemCaseDto;
 import com.studio.api.portfolio.dto.ProjectSummaryDto;
+import com.studio.api.portfolio.dto.ProjectVisualDto;
 import com.studio.api.portfolio.dto.SocialLinkDto;
 import com.studio.api.portfolio.dto.StrengthDto;
 import com.studio.api.portfolio.dto.TechItemDto;
@@ -33,6 +34,7 @@ import com.studio.api.portfolio.entity.StrengthEntity;
 import com.studio.api.portfolio.entity.TechStackGroupEntity;
 import com.studio.api.portfolio.entity.TimelineEntryEntity;
 import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -131,6 +133,7 @@ public class PortfolioMapper {
                         .toList(),
                 entity.getProblems().stream()
                         .map(p -> new ProjectProblemCaseDto(
+                                p.getKind().name().toLowerCase(Locale.ROOT),
                                 p.getTitle(),
                                 p.getDescription(),
                                 List.copyOf(p.getApproach()),
@@ -140,6 +143,24 @@ public class PortfolioMapper {
                                 List.copyOf(p.getOutcomes()),
                                 p.getMetrics().stream()
                                         .map(m -> new ProjectMetricDto(m.getLabel(), m.getMetricValue()))
+                                        .toList(),
+                                p.getImages().stream()
+                                        .map(i -> new ProjectImageDto(
+                                                imageUrlResolver.resolve(i.getImage()),
+                                                i.getAlt(),
+                                                i.getCaption()))
+                                        .toList(),
+                                p.getVisuals().stream()
+                                        .map(v -> new ProjectVisualDto(
+                                                v.getId(),
+                                                v.getVisualType().name().toLowerCase(Locale.ROOT),
+                                                v.getTitle(),
+                                                v.getCaption(),
+                                                imageUrlResolver.resolve(v.getImage()),
+                                                v.getAlt(),
+                                                v.getPayload(),
+                                                v.getSchemaVersion(),
+                                                v.getSortOrder()))
                                         .toList()))
                         .toList()
         );
