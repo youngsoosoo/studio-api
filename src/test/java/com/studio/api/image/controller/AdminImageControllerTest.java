@@ -11,9 +11,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.studio.api.config.AdminKeyInterceptor;
 import com.studio.api.portfolio.entity.ProfileEntity;
+import com.studio.api.portfolio.entity.ProjectDetailEntity;
+import com.studio.api.portfolio.entity.ProjectEntity;
+import com.studio.api.portfolio.entity.ProjectProblemEntity;
+import com.studio.api.portfolio.entity.ProjectProblemKind;
 import com.studio.api.portfolio.repository.ProfileRepository;
+import com.studio.api.portfolio.repository.ProjectDetailRepository;
+import com.studio.api.portfolio.repository.ProjectProblemRepository;
+import com.studio.api.portfolio.repository.ProjectProblemVisualRepository;
+import com.studio.api.portfolio.repository.ProjectRepository;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +32,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -42,6 +52,18 @@ class AdminImageControllerTest {
 
     @Autowired
     private ProfileRepository profileRepository;
+
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    @Autowired
+    private ProjectDetailRepository projectDetailRepository;
+
+    @Autowired
+    private ProjectProblemRepository projectProblemRepository;
+
+    @Autowired
+    private ProjectProblemVisualRepository projectProblemVisualRepository;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
@@ -174,6 +196,66 @@ class AdminImageControllerTest {
                 .header(AdminKeyInterceptor.HEADER, ADMIN_KEY))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void rejectsProblemVisualImageWithoutCaseCoordinates() throws Exception {
+        mockMvc.perform(multipart("/api/admin/images").file(pngFile())
+                .param("target", "problem-visual-image")
+                .param("project", "focus")
+                .header(AdminKeyInterceptor.HEADER, ADMIN_KEY))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    @Transactional
+    void attachesImageDirectlyToProblemVisualOrder() throws Exception {
+        ProjectEntity project = projectRepository.save(new ProjectEntity(
+                "visual-project",
+                "Visual Project",
+                "Synthetic project",
+                "Backend",
+                "2026",
+                null,
+                null,
+                true,
+                1,
+                List.of("Java")));
+        ProjectDetailEntity detail = projectDetailRepository.save(new ProjectDetailEntity(
+                project,
+                "Synthetic problem",
+                null,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of("Java")));
+        ProjectProblemEntity problem = projectProblemRepository.save(new ProjectProblemEntity(
+                detail,
+                "Synthetic case",
+                "Synthetic definition",
+                ProjectProblemKind.PROBLEM,
+                0));
+
+        mockMvc.perform(multipart("/api/admin/images").file(pngFile())
+                .param("target", "problem-visual-image")
+                .param("project", "visual-project")
+                .param("problemKind", "problem")
+                .param("problemOrder", "0")
+                .param("visualOrder", "1")
+                .param("title", "Synthetic packet")
+                .param("alt", "Synthetic packet capture")
+                .header(AdminKeyInterceptor.HEADER, ADMIN_KEY))
+            .andExpect(status().isCreated());
+
+        var visual = projectProblemVisualRepository
+                .findByProblemIdAndSortOrder(problem.getId(), 1)
+                .orElseThrow();
+        assertThat(visual.getVisualType().name()).isEqualTo("IMAGE");
+        assertThat(visual.getTitle()).isEqualTo("Synthetic packet");
+        assertThat(visual.getAlt()).isEqualTo("Synthetic packet capture");
+        assertThat(visual.getImage()).isNotNull();
     }
 
     @Test
