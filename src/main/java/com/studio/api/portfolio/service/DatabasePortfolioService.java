@@ -14,7 +14,6 @@ import com.studio.api.portfolio.dto.ProjectDetailResponseDto;
 import com.studio.api.portfolio.dto.ProjectSummaryDto;
 import com.studio.api.portfolio.dto.StrengthDto;
 import com.studio.api.portfolio.dto.TechStackGroupDto;
-import com.studio.api.portfolio.dto.TimelineEntryDto;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -43,7 +42,7 @@ public class DatabasePortfolioService implements PortfolioReader {
     @Override
     @Cacheable(CacheConfig.PORTFOLIO_CACHE)
     public PortfolioResponseDto getPortfolio() {
-        // Each section loads in its own thread + transaction, so the ~11 DB
+        // Each section loads in its own thread + transaction, so the ~10 DB
         // round trips overlap instead of summing on a cold (uncached) request.
         CompletableFuture<ProfileDto> profile = async(loader::loadProfile);
         CompletableFuture<AboutDto> about = async(loader::loadAbout);
@@ -55,11 +54,10 @@ public class DatabasePortfolioService implements PortfolioReader {
         CompletableFuture<List<EducationDto>> education = async(loader::loadEducation);
         CompletableFuture<List<AwardDto>> awards = async(loader::loadAwards);
         CompletableFuture<List<CertificationDto>> certifications = async(loader::loadCertifications);
-        CompletableFuture<List<TimelineEntryDto>> timeline = async(loader::loadTimeline);
 
         try {
             CompletableFuture.allOf(profile, about, strengths, achievements, experiences,
-                    projects, techStack, education, awards, certifications, timeline).join();
+                    projects, techStack, education, awards, certifications).join();
         } catch (CompletionException e) {
             // Surface the real cause (e.g. NotFoundException) instead of the wrapper.
             throw e.getCause() instanceof RuntimeException re ? re : e;
@@ -68,7 +66,7 @@ public class DatabasePortfolioService implements PortfolioReader {
         return new PortfolioResponseDto(
                 profile.join(), about.join(), strengths.join(), achievements.join(),
                 experiences.join(), projects.join(), techStack.join(), education.join(),
-                awards.join(), certifications.join(), timeline.join());
+                awards.join(), certifications.join());
     }
 
     private <T> CompletableFuture<T> async(Supplier<T> supplier) {
@@ -123,11 +121,6 @@ public class DatabasePortfolioService implements PortfolioReader {
     @Override
     public List<CertificationDto> getCertifications() {
         return loader.loadCertifications();
-    }
-
-    @Override
-    public List<TimelineEntryDto> getTimeline() {
-        return loader.loadTimeline();
     }
 
     @Override

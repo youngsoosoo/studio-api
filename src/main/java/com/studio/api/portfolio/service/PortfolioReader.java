@@ -12,7 +12,6 @@ import com.studio.api.portfolio.dto.ProjectDetailResponseDto;
 import com.studio.api.portfolio.dto.ProjectSummaryDto;
 import com.studio.api.portfolio.dto.StrengthDto;
 import com.studio.api.portfolio.dto.TechStackGroupDto;
-import com.studio.api.portfolio.dto.TimelineEntryDto;
 import java.util.List;
 
 /** Read side of the portfolio API, implemented by {@link DatabasePortfolioService}. */
@@ -39,8 +38,6 @@ public interface PortfolioReader {
     List<AwardDto> getAwards();
 
     List<CertificationDto> getCertifications();
-
-    List<TimelineEntryDto> getTimeline();
 
     /**
      * Full case study for the project with the given slug.

@@ -15,7 +15,6 @@ public record PortfolioResponseDto(
         List<TechStackGroupDto> techStack,
         List<EducationDto> education,
         List<AwardDto> awards,
-        List<CertificationDto> certifications,
-        List<TimelineEntryDto> timeline
+        List<CertificationDto> certifications
 ) {
 }
