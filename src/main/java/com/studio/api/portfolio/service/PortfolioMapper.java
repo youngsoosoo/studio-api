@@ -20,7 +20,6 @@ import com.studio.api.portfolio.dto.SocialLinkDto;
 import com.studio.api.portfolio.dto.StrengthDto;
 import com.studio.api.portfolio.dto.TechItemDto;
 import com.studio.api.portfolio.dto.TechStackGroupDto;
-import com.studio.api.portfolio.dto.TimelineEntryDto;
 import com.studio.api.portfolio.entity.AboutEntity;
 import com.studio.api.portfolio.entity.AchievementEntity;
 import com.studio.api.portfolio.entity.AwardEntity;
@@ -32,7 +31,6 @@ import com.studio.api.portfolio.entity.ProjectDetailEntity;
 import com.studio.api.portfolio.entity.ProjectEntity;
 import com.studio.api.portfolio.entity.StrengthEntity;
 import com.studio.api.portfolio.entity.TechStackGroupEntity;
-import com.studio.api.portfolio.entity.TimelineEntryEntity;
 import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
@@ -191,11 +189,5 @@ public class PortfolioMapper {
         return new CertificationDto(
                 entity.getSlug(), entity.getName(), entity.getIssuer(),
                 entity.getDateText(), entity.getCredentialId());
-    }
-
-    public TimelineEntryDto toTimelineEntry(TimelineEntryEntity entity) {
-        return new TimelineEntryDto(
-                entity.getSlug(), entity.getDateText(), entity.getTitle(),
-                entity.getDescription(), entity.getEntryType());
     }
 }

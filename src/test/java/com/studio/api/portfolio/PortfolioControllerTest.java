@@ -126,7 +126,6 @@ class PortfolioControllerTest {
                 List.of(),
                 List.of(),
                 List.of(),
-                List.of(),
                 List.of()));
         when(portfolioReader.getProjects()).thenReturn(List.of(PROJECT));
         when(portfolioReader.getProjectDetail(PROJECT.id())).thenReturn(PROJECT_DETAIL);
@@ -151,8 +150,7 @@ class PortfolioControllerTest {
             .andExpect(jsonPath("$.data.achievements").isArray())
             .andExpect(jsonPath("$.data.education").isArray())
             .andExpect(jsonPath("$.data.awards").isArray())
-            .andExpect(jsonPath("$.data.certifications").isArray())
-            .andExpect(jsonPath("$.data.timeline").isArray());
+            .andExpect(jsonPath("$.data.certifications").isArray());
     }
 
     @Test
