@@ -13,7 +13,6 @@ import com.studio.api.portfolio.dto.ProjectDetailResponseDto;
 import com.studio.api.portfolio.dto.ProjectSummaryDto;
 import com.studio.api.portfolio.dto.StrengthDto;
 import com.studio.api.portfolio.dto.TechStackGroupDto;
-import com.studio.api.portfolio.dto.TimelineEntryDto;
 import com.studio.api.portfolio.service.PortfolioReader;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +37,7 @@ public class PortfolioController {
 
     private final PortfolioReader portfolioReader;
 
-    /** 프로필부터 타임라인까지 포트폴리오의 모든 섹션을 한 번에 조회한다. */
+    /** 포트폴리오의 모든 섹션을 한 번에 조회한다. */
     @GetMapping
     public ApiResponseDto<PortfolioResponseDto> getPortfolio() {
         return ApiResponseDto.ok(portfolioReader.getPortfolio());
@@ -108,11 +107,5 @@ public class PortfolioController {
     @GetMapping("/certifications")
     public ApiResponseDto<List<CertificationDto>> getCertifications() {
         return ApiResponseDto.ok(portfolioReader.getCertifications());
-    }
-
-    /** 경력과 주요 이력을 시간순 타임라인 형태로 조회한다. */
-    @GetMapping("/timeline")
-    public ApiResponseDto<List<TimelineEntryDto>> getTimeline() {
-        return ApiResponseDto.ok(portfolioReader.getTimeline());
     }
 }

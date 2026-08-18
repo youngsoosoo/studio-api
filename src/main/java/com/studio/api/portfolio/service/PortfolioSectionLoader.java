@@ -12,7 +12,6 @@ import com.studio.api.portfolio.dto.ProjectDetailResponseDto;
 import com.studio.api.portfolio.dto.ProjectSummaryDto;
 import com.studio.api.portfolio.dto.StrengthDto;
 import com.studio.api.portfolio.dto.TechStackGroupDto;
-import com.studio.api.portfolio.dto.TimelineEntryDto;
 import com.studio.api.portfolio.repository.AboutRepository;
 import com.studio.api.portfolio.repository.AchievementRepository;
 import com.studio.api.portfolio.repository.AwardRepository;
@@ -24,7 +23,6 @@ import com.studio.api.portfolio.repository.ProjectDetailRepository;
 import com.studio.api.portfolio.repository.ProjectRepository;
 import com.studio.api.portfolio.repository.StrengthRepository;
 import com.studio.api.portfolio.repository.TechStackGroupRepository;
-import com.studio.api.portfolio.repository.TimelineEntryRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -54,7 +52,6 @@ public class PortfolioSectionLoader {
     private final EducationRepository educationRepository;
     private final AwardRepository awardRepository;
     private final CertificationRepository certificationRepository;
-    private final TimelineEntryRepository timelineEntryRepository;
     private final PortfolioMapper mapper;
 
     @Transactional(readOnly = true)
@@ -124,13 +121,6 @@ public class PortfolioSectionLoader {
     public List<CertificationDto> loadCertifications() {
         return certificationRepository.findAllByOrderBySortOrderAsc().stream()
                 .map(mapper::toCertification)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<TimelineEntryDto> loadTimeline() {
-        return timelineEntryRepository.findAllByOrderBySortOrderAsc().stream()
-                .map(mapper::toTimelineEntry)
                 .toList();
     }
 
